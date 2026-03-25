@@ -1,0 +1,23 @@
+I0000 00:00:1774411171.404106 1112284 gl_context.cc:407] GL version: 2.1 (2.1 Metal - 89.4), renderer: Apple M2
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+W0000 00:00:1774411171.464580 1112287 inference_feedback_manager.cc:121] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1774411171.488423 1112287 inference_feedback_manager.cc:121] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+ * Tip: There are .env files present. Install python-dotenv to use them.
+Loading height model …
+Height model loaded ✓
+Loading weight model …
+Weight model loaded ✓
+MediaPipe PoseLandmarker ready ✓
+
+🚀  Prediction API running on http://localhost:5001
+ * Serving Flask app 'predict_api'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.0.100:5001
+[33mPress CTRL+C to quit[0m
+W0000 00:00:1774411177.768441 1112292 landmark_projection_calculator.cc:81] Using NORM_RECT without IMAGE_DIMENSIONS is only supported for the square ROI. Provide IMAGE_DIMENSIONS or use PROJECTION_MATRIX.
+127.0.0.1 - - [25/Mar/2026 11:59:38] "POST /predict HTTP/1.1" 200 -
+127.0.0.1 - - [25/Mar/2026 12:01:41] "POST /predict HTTP/1.1" 200 -
+127.0.0.1 - - [25/Mar/2026 12:18:55] "POST /predict HTTP/1.1" 200 -

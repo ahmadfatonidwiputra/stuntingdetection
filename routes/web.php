@@ -3,15 +3,17 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MeasurementController;
 use App\Http\Controllers\ProfileController;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return redirect()->route('login');
+    return redirect()->route(User::needsInitialSuperadmin() ? 'register' : 'login');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::resource('measurements', MeasurementController::class)->except(['edit', 'update']);
+    Route::post('/measurements/predict', [MeasurementController::class, 'predict'])->name('measurements.predict');
 });
 
 Route::middleware('auth')->group(function () {

@@ -25,16 +25,36 @@
             </svg>
             Foto Pengukuran
         </div>
-        @if($measurement->photo_path)
-            <div class="detail-photo">
-                <img src="{{ asset('storage/' . $measurement->photo_path) }}" alt="Foto pengukuran">
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 12px;">
+            <div>
+                <p style="font-size: 13px; font-weight: 600; color: var(--text-color); margin-bottom: 8px; text-align: center;">Foto Asli</p>
+                @if($measurement->photo_path)
+                    <div class="detail-photo">
+                        <img src="{{ asset('storage/' . $measurement->photo_path) }}" alt="Foto Asli">
+                    </div>
+                @else
+                    <div class="empty-state" style="padding: 20px;">
+                        <div class="empty-state-icon" style="width: 40px; height: 40px; font-size: 20px;">📷</div>
+                        <p style="font-size: 12px;">Tidak ada foto asli</p>
+                    </div>
+                @endif
             </div>
-        @else
-            <div class="empty-state" style="padding: 40px;">
-                <div class="empty-state-icon">📷</div>
-                <p>Tidak ada foto</p>
+
+            <div>
+                <p style="font-size: 13px; font-weight: 600; color: var(--text-color); margin-bottom: 8px; text-align: center;">MediaPipe Pose</p>
+                @if($measurement->pose_photo_path)
+                    <div class="detail-photo">
+                        <img src="{{ asset('storage/' . $measurement->pose_photo_path) }}" alt="Foto Pose ML">
+                    </div>
+                @else
+                    <div class="empty-state" style="padding: 20px;">
+                        <div class="empty-state-icon" style="width: 40px; height: 40px; font-size: 20px;">🤖</div>
+                        <p style="font-size: 12px;">Tidak ada estimasi pose ML</p>
+                    </div>
+                @endif
             </div>
-        @endif
+        </div>
     </div>
 
     <!-- Details -->
@@ -60,19 +80,57 @@
             </div>
 
             <div style="text-align: center; padding: 20px; background: var(--bg-glass); border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
-                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Body Mass Index (BMI)</div>
+            <div style="text-align: center; padding: 20px; background: var(--bg-glass); border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Z-Score (TB/U)</div>
                 <div style="font-size: 42px; font-weight: 800; background: var(--gradient-3); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                    {{ number_format($measurement->bmi, 1) }}
+                    {{ number_format($measurement->z_score, 2) }}
                 </div>
-                <span class="badge badge-{{ strtolower($measurement->bmi_category) }}" style="margin-top: 8px; font-size: 14px; padding: 6px 16px;">
-                    {{ $measurement->bmi_category }}
+                <span class="badge badge-{{ strtolower(str_replace(' ', '-', $measurement->stunting_category)) }}" style="margin-top: 8px; font-size: 14px; padding: 6px 16px;">
+                    {{ $measurement->stunting_category }}
                 </span>
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-row-label">Nama Anak</span>
+                <span class="detail-row-value">{{ $measurement->child_name }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-row-label">Nama Orang Tua</span>
+                <span class="detail-row-value">{{ $measurement->parent_name }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-row-label">Tanggal Lahir</span>
+                <span class="detail-row-value">{{ $measurement->birth_date ? $measurement->birth_date->format('d F Y') : '-' }}</span>
+            </div>
+            @if($measurement->birth_date)
+            @php
+                $diff = $measurement->birth_date->diff($measurement->measured_at);
+                $ageString = '';
+                if ($diff->y > 0) $ageString .= $diff->y . ' tahun, ';
+                if ($diff->m > 0 || $diff->y > 0) $ageString .= $diff->m . ' bulan, ';
+                $ageString .= $diff->d . ' hari';
+            @endphp
+            <div class="detail-row">
+                <span class="detail-row-label">Usia saat Pengukuran</span>
+                <span class="detail-row-value">{{ $ageString }}</span>
+            </div>
+            @endif
+            <div class="detail-row">
+                <span class="detail-row-label">Jenis Kelamin</span>
+                <span class="detail-row-value">{{ $measurement->gender == 'L' ? 'Laki-laki' : 'Perempuan' }}</span>
             </div>
 
             <div class="detail-row">
                 <span class="detail-row-label">Tanggal Pengukuran</span>
                 <span class="detail-row-value">{{ $measurement->measured_at->format('d F Y') }}</span>
             </div>
+
+            @if($measurement->posyandu_name)
+            <div class="detail-row">
+                <span class="detail-row-label">Tempat Pengukuran</span>
+                <span class="detail-row-value">{{ $measurement->posyandu_name }}</span>
+            </div>
+            @endif
 
             <div class="detail-row">
                 <span class="detail-row-label">Waktu</span>
@@ -89,13 +147,13 @@
             @endif
 
             <!-- BMI Info -->
-            <div style="padding: 16px; border-radius: var(--radius-sm); background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.15);">
-                <div style="font-size: 12px; color: var(--accent-blue); font-weight: 600; margin-bottom: 8px;">Kategori BMI:</div>
+            <!-- Stunting Info -->
+            <div style="padding: 16px; border-radius: var(--radius-sm); background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.15); margin-bottom: 20px;">
+                <div style="font-size: 12px; color: var(--accent-blue); font-weight: 600; margin-bottom: 8px;">Kategori Stunting TB/U (Kemenkes/WHO):</div>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap; font-size: 11px;">
-                    <span class="badge badge-kurus">&lt; 18.5 Kurus</span>
-                    <span class="badge badge-normal">18.5 - 24.9 Normal</span>
-                    <span class="badge badge-gemuk">25 - 29.9 Gemuk</span>
-                    <span class="badge badge-obesitas">&ge; 30 Obesitas</span>
+                    <span class="badge badge-sangat-stunting">&lt; -3.0 Sangat Stunting</span>
+                    <span class="badge badge-stunting">-3.0 s/d -2.0 Stunting</span>
+                    <span class="badge badge-normal">&ge; -2.0 Normal</span>
                 </div>
             </div>
 

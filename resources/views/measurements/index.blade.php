@@ -52,7 +52,7 @@
                         <th>Tanggal</th>
                         <th>Tinggi</th>
                         <th>Berat</th>
-                        <th>BMI</th>
+                        <th>Z-Score</th>
                         <th>Status</th>
                         <th>Foto</th>
                         <th>Aksi</th>
@@ -68,10 +68,10 @@
                         </td>
                         <td><strong>{{ number_format($m->height_cm, 1) }}</strong> <span style="color: var(--text-muted);">cm</span></td>
                         <td><strong>{{ number_format($m->weight_kg, 1) }}</strong> <span style="color: var(--text-muted);">kg</span></td>
-                        <td><strong>{{ number_format($m->bmi, 1) }}</strong></td>
+                        <td><strong>{{ number_format($m->z_score, 2) }}</strong></td>
                         <td>
-                            <span class="badge badge-{{ strtolower($m->bmi_category) }}">
-                                {{ $m->bmi_category }}
+                            <span class="badge badge-{{ strtolower(str_replace(' ', '-', $m->stunting_category)) }}">
+                                {{ $m->stunting_category }}
                             </span>
                         </td>
                         <td>

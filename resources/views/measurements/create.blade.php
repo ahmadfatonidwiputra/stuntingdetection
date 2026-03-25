@@ -34,7 +34,7 @@
                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                     <circle cx="12" cy="13" r="4"/>
                 </svg>
-                Kamera & Estimasi Tinggi
+                Kamera & Estimasi ML
             </div>
 
             <div class="camera-container" id="cameraContainer">
@@ -77,12 +77,17 @@
             </div>
 
             <input type="hidden" name="photo_base64" id="photoBase64">
+            <input type="hidden" name="pose_photo_base64" id="posePhotoBase64">
 
             <!-- Estimation Result -->
-            <div class="measurement-result" id="estimationResult" style="display:none;">
+            <div class="measurement-result" id="estimationResult" style="display:none; gap: 12px;">
                 <div class="result-card">
                     <div class="result-value" id="estimatedHeight">-</div>
                     <div class="result-unit">Estimasi Tinggi (cm)</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-value" id="estimatedWeight">-</div>
+                    <div class="result-unit">Estimasi Berat (kg)</div>
                 </div>
             </div>
 
@@ -108,10 +113,65 @@
             </div>
 
             <div class="form-group">
+                <label class="form-label">Nama Anak *</label>
+                <input type="text" name="child_name" class="form-input" value="{{ old('child_name') }}" placeholder="Masukkan nama anak" required>
+                @error('child_name')
+                    <p class="form-error">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Nama Orang Tua *</label>
+                <input type="text" name="parent_name" class="form-input" value="{{ old('parent_name') }}" placeholder="Masukkan nama orang tua" required>
+                @error('parent_name')
+                    <p class="form-error">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Alamat *</label>
+                <textarea name="address" class="form-textarea" placeholder="Masukkan alamat lengkap" required>{{ old('address') }}</textarea>
+                @error('address')
+                    <p class="form-error">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Nama Posyandu/Puskesmas</label>
+                <input type="text" name="posyandu_name" class="form-input" value="{{ old('posyandu_name') }}" placeholder="Masukkan nama tempat pengukuran (opsional)">
+                @error('posyandu_name')
+                    <p class="form-error">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Tanggal Lahir Anak *</label>
+                <input type="date" name="birth_date" id="birthDateInput" class="form-input" value="{{ old('birth_date') }}" max="{{ date('Y-m-d') }}" required>
+                @error('birth_date')
+                    <p class="form-error">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label class="form-label">Jenis Kelamin *</label>
+                <div style="display: flex; gap: 16px;">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="radio" name="gender" value="L" {{ old('gender') == 'L' ? 'checked' : '' }} required> Laki-laki
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="radio" name="gender" value="P" {{ old('gender') == 'P' ? 'checked' : '' }} required> Perempuan
+                    </label>
+                </div>
+                @error('gender')
+                    <p class="form-error">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="form-group">
                 <label class="form-label">Tinggi Badan (cm) *</label>
                 <input type="number" name="height_cm" id="heightInput" class="form-input" step="0.1" min="30" max="300"
                        value="{{ old('height_cm') }}" placeholder="Masukkan tinggi badan atau gunakan estimasi" required>
-                <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Hasil estimasi kamera akan otomatis mengisi field ini</p>
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Hasil estimasi ML akan otomatis mengisi field ini</p>
                 @error('height_cm')
                     <p class="form-error">{{ $message }}</p>
                 @enderror
@@ -120,7 +180,8 @@
             <div class="form-group">
                 <label class="form-label">Berat Badan (kg) *</label>
                 <input type="number" name="weight_kg" id="weightInput" class="form-input" step="0.1" min="1" max="500"
-                       value="{{ old('weight_kg') }}" placeholder="Masukkan berat badan" required>
+                       value="{{ old('weight_kg') }}" placeholder="Masukkan berat badan atau gunakan estimasi" required>
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Hasil estimasi ML akan otomatis mengisi field ini</p>
                 @error('weight_kg')
                     <p class="form-error">{{ $message }}</p>
                 @enderror
@@ -128,10 +189,15 @@
 
             <div class="form-group">
                 <label class="form-label">Tanggal Pengukuran *</label>
-                <input type="date" name="measured_at" class="form-input" value="{{ old('measured_at', date('Y-m-d')) }}" required>
+                <input type="date" name="measured_at" id="measuredAtInput" class="form-input" value="{{ old('measured_at', date('Y-m-d')) }}" required>
                 @error('measured_at')
                     <p class="form-error">{{ $message }}</p>
                 @enderror
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Usia Saat Diukur</label>
+                <input type="text" id="ageDisplay" class="form-input" style="background-color: var(--bg-color); cursor: default;" readonly placeholder="Pilih tanggal lahir & pengukuran">
             </div>
 
             <div class="form-group">
@@ -142,14 +208,7 @@
                 @enderror
             </div>
 
-            <!-- BMI Preview -->
-            <div class="glass-card" id="bmiPreview" style="background: var(--bg-glass); display: none; margin-bottom: 20px;">
-                <div style="text-align: center;">
-                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Preview BMI</div>
-                    <div id="bmiPreviewValue" style="font-size: 36px; font-weight: 800; background: var(--gradient-1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">-</div>
-                    <div id="bmiPreviewCategory" class="badge" style="margin-top: 8px;">-</div>
-                </div>
-            </div>
+
 
             <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 14px;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -164,44 +223,58 @@
 </form>
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm/vision_wasm_internal.js"></script>
 <script>
 let stream = null;
-let mediaPipeLoaded = false;
-let poseLandmarker = null;
+const PREDICT_URL = '{{ route("measurements.predict") }}';
+const CSRF_TOKEN = '{{ csrf_token() }}';
 
-// BMI live preview
-const heightInput = document.getElementById('heightInput');
-const weightInput = document.getElementById('weightInput');
+// Hitung usia
+const birthDateInput = document.getElementById('birthDateInput');
+const measuredAtInput = document.getElementById('measuredAtInput');
+const ageDisplay = document.getElementById('ageDisplay');
 
-function updateBmiPreview() {
-    const h = parseFloat(heightInput.value);
-    const w = parseFloat(weightInput.value);
-    const preview = document.getElementById('bmiPreview');
-    const valueEl = document.getElementById('bmiPreviewValue');
-    const catEl = document.getElementById('bmiPreviewCategory');
-
-    if (h > 0 && w > 0) {
-        const hm = h / 100;
-        const bmi = (w / (hm * hm)).toFixed(1);
-        let category, catClass;
-
-        if (bmi < 18.5) { category = 'Kurus'; catClass = 'badge-kurus'; }
-        else if (bmi < 25) { category = 'Normal'; catClass = 'badge-normal'; }
-        else if (bmi < 30) { category = 'Gemuk'; catClass = 'badge-gemuk'; }
-        else { category = 'Obesitas'; catClass = 'badge-obesitas'; }
-
-        valueEl.textContent = bmi;
-        catEl.textContent = category;
-        catEl.className = 'badge ' + catClass;
-        preview.style.display = 'block';
-    } else {
-        preview.style.display = 'none';
+function calculateAge() {
+    if (!birthDateInput.value || !measuredAtInput.value) {
+        ageDisplay.value = '';
+        return;
     }
+
+    const start = new Date(birthDateInput.value);
+    const end = new Date(measuredAtInput.value);
+
+    if (end < start) {
+        ageDisplay.value = 'Tanggal pengukuran tidak boleh mendahului tanggal lahir';
+        return;
+    }
+
+    let years = end.getFullYear() - start.getFullYear();
+    let months = end.getMonth() - start.getMonth();
+    let days = end.getDate() - start.getDate();
+
+    if (days < 0) {
+        months -= 1;
+        const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
+        days += prevMonth.getDate();
+    }
+
+    if (months < 0) {
+        years -= 1;
+        months += 12;
+    }
+
+    let ageString = [];
+    if (years > 0) ageString.push(years + ' tahun');
+    if (months > 0) ageString.push(months + ' bulan');
+    if (days > 0 || (years === 0 && months === 0)) ageString.push(days + ' hari');
+    
+    ageDisplay.value = ageString.join(' ');
 }
 
-heightInput.addEventListener('input', updateBmiPreview);
-weightInput.addEventListener('input', updateBmiPreview);
+if(birthDateInput && measuredAtInput && ageDisplay) {
+    birthDateInput.addEventListener('change', calculateAge);
+    measuredAtInput.addEventListener('change', calculateAge);
+    document.addEventListener('DOMContentLoaded', calculateAge);
+}
 
 // Camera functions
 async function startCamera() {
@@ -246,8 +319,10 @@ async function capturePhoto() {
     document.getElementById('btnCapture').style.display = 'none';
     document.getElementById('btnReset').style.display = 'inline-flex';
 
-    // Estimate height
-    estimateHeight(canvas, ctx);
+    // Convert canvas to blob and send to ML API
+    canvas.toBlob(blob => {
+        sendToMLApi(blob);
+    }, 'image/jpeg', 0.8);
 }
 
 function handlePhotoUpload(event) {
@@ -256,114 +331,71 @@ function handlePhotoUpload(event) {
 
     const reader = new FileReader();
     reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-            const canvas = document.getElementById('cameraCanvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.drawImage(img, 0, 0);
-
-            document.getElementById('capturedPhoto').src = e.target.result;
-            document.getElementById('capturedPhoto').style.display = 'block';
-            document.getElementById('cameraVideo').style.display = 'none';
-
-            estimateHeight(canvas, ctx);
-        };
-        img.src = e.target.result;
+        document.getElementById('capturedPhoto').src = e.target.result;
+        document.getElementById('capturedPhoto').style.display = 'block';
+        document.getElementById('cameraVideo').style.display = 'none';
     };
     reader.readAsDataURL(file);
+
+    // Send the file directly to ML API
+    sendToMLApi(file);
 }
 
-async function estimateHeight(canvas, ctx) {
+async function sendToMLApi(imageBlob) {
     const loading = document.getElementById('loadingOverlay');
     loading.style.display = 'flex';
+    document.querySelector('#loadingOverlay .loading-text').textContent = 'Menganalisis dengan ML model...';
 
     try {
-        // Use MediaPipe Pose Detection via CDN
-        const { PoseLandmarker, FilesetResolver, DrawingUtils } = await import(
-            'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest'
-        );
+        const formData = new FormData();
+        formData.append('image', imageBlob, 'photo.jpg');
+        formData.append('_token', CSRF_TOKEN);
 
-        const vision = await FilesetResolver.forVisionTasks(
-            'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
-        );
-
-        const landmarker = await PoseLandmarker.createFromOptions(vision, {
-            baseOptions: {
-                modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
-                delegate: 'GPU'
-            },
-            runningMode: 'IMAGE',
-            numPoses: 1
+        const response = await fetch(PREDICT_URL, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': CSRF_TOKEN,
+                'Accept': 'application/json'
+            }
         });
 
-        // Create an image element for detection
-        const imgEl = new Image();
-        imgEl.src = canvas.toDataURL();
-        await new Promise(resolve => imgEl.onload = resolve);
-
-        const result = landmarker.detect(imgEl);
-
-        if (result.landmarks && result.landmarks.length > 0) {
-            const landmarks = result.landmarks[0];
-
-            // Key points: nose(0), left_ankle(27), right_ankle(28), left_eye(1), right_eye(4)
-            // Top of head estimation: use midpoint above nose
-            const nose = landmarks[0];
-            const leftEye = landmarks[1];
-            const rightEye = landmarks[4];
-            const leftAnkle = landmarks[27];
-            const rightAnkle = landmarks[28];
-            const leftHeel = landmarks[29];
-            const rightHeel = landmarks[30];
-
-            // Get the highest and lowest points
-            const headY = nose.y - (nose.y - ((leftEye.y + rightEye.y) / 2)) * 2.5; // estimate top of head
-            const feetY = Math.max(leftHeel.y, rightHeel.y, leftAnkle.y, rightAnkle.y);
-
-            // Height in normalized coordinates
-            const heightRatio = feetY - headY;
-
-            // Estimate real height using body proportion heuristics
-            // Average human body is about 7.5 head heights
-            // We estimate using the ratio of body to image
-            const pixelHeight = heightRatio * canvas.height;
-
-            // Use a calibration factor - assume average camera setup
-            // This is a rough estimate; real-world calibration would need known reference
-            const estimatedHeightCm = Math.round(pixelHeight * 0.28 * 10) / 10; // rough scaling
-
-            // Clamp to reasonable range
-            const clampedHeight = Math.max(50, Math.min(250, estimatedHeightCm));
-
-            document.getElementById('estimatedHeight').textContent = clampedHeight.toFixed(1);
-            document.getElementById('estimationResult').style.display = 'flex';
-            document.getElementById('heightInput').value = clampedHeight.toFixed(1);
-            updateBmiPreview();
-
-            // Draw landmarks on canvas
-            canvas.style.display = 'block';
-            document.getElementById('capturedPhoto').style.display = 'none';
-
-            const drawingUtils = new DrawingUtils(ctx);
-            drawingUtils.drawLandmarks(landmarks, {
-                radius: 3,
-                color: '#3b82f6',
-                lineWidth: 1
-            });
-            drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
-                color: '#8b5cf6',
-                lineWidth: 2
-            });
-        } else {
-            alert('Tidak dapat mendeteksi pose tubuh. Pastikan seluruh tubuh terlihat dari kepala hingga kaki.');
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || 'Server error ' + response.status);
         }
 
-        landmarker.close();
+        const data = await response.json();
+
+        // Fill pose photo base64
+        if (data.pose_image_base64) {
+            document.getElementById('posePhotoBase64').value = data.pose_image_base64;
+        }
+        if (data.height_cm !== null && data.height_cm !== undefined) {
+            document.getElementById('estimatedHeight').textContent = data.height_cm;
+            document.getElementById('heightInput').value = data.height_cm;
+        } else {
+            document.getElementById('estimatedHeight').textContent = '-';
+            if (data.height_error) {
+                console.warn('Height estimation error:', data.height_error);
+            }
+        }
+
+        // Fill weight
+        if (data.weight_kg !== null && data.weight_kg !== undefined) {
+            document.getElementById('estimatedWeight').textContent = data.weight_kg;
+            document.getElementById('weightInput').value = data.weight_kg;
+        } else {
+            document.getElementById('estimatedWeight').textContent = '-';
+            if (data.weight_error) {
+                console.warn('Weight estimation error:', data.weight_error);
+            }
+        }
+
+        document.getElementById('estimationResult').style.display = 'flex';
     } catch (err) {
-        console.error('Estimation error:', err);
-        alert('Error saat estimasi: ' + err.message + '. Silakan masukkan tinggi badan secara manual.');
+        console.error('ML API error:', err);
+        alert('Error saat prediksi ML: ' + err.message + '\n\nPastikan server Python (predict_api.py) sedang berjalan.\nSilakan masukkan tinggi & berat badan secara manual.');
     } finally {
         loading.style.display = 'none';
     }
@@ -378,6 +410,9 @@ function resetCamera() {
     document.getElementById('btnStartCamera').style.display = 'inline-flex';
     document.getElementById('cameraVideo').style.display = 'block';
     document.getElementById('photoUpload').value = '';
+    document.getElementById('heightInput').value = '';
+    document.getElementById('weightInput').value = '';
+    document.getElementById('posePhotoBase64').value = '';
 }
 </script>
 @endpush

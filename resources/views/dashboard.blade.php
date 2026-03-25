@@ -28,8 +28,8 @@
 
     <div class="glass-card stat-card purple fade-in">
         <div class="stat-icon purple">💪</div>
-        <div class="stat-value">{{ $avgBmi ? number_format($avgBmi, 1) : '-' }}</div>
-        <div class="stat-label">Rata-rata BMI</div>
+        <div class="stat-value">{{ $avgZScore ? number_format($avgZScore, 2) : '-' }}</div>
+        <div class="stat-label">Rata-rata Z-Score</div>
     </div>
 </div>
 
@@ -42,7 +42,9 @@
             </svg>
             Trend Pengukuran
         </div>
-        <canvas id="trendChart" height="280"></canvas>
+        <div style="position: relative; height: 300px; width: 100%;">
+            <canvas id="trendChart"></canvas>
+        </div>
     </div>
 
     <div class="glass-card fade-in">
@@ -51,9 +53,11 @@
                 <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
                 <path d="M22 12A10 10 0 0 0 12 2v10z"/>
             </svg>
-            Status BMI
+            Status Stunting
         </div>
-        <canvas id="bmiChart" height="280"></canvas>
+        <div style="position: relative; height: 300px; width: 100%;">
+            <canvas id="bmiChart"></canvas>
+        </div>
     </div>
 </div>
 
@@ -79,36 +83,38 @@
     </div>
 
     @if($recentMeasurements->count() > 0)
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Tanggal</th>
-                    <th>Tinggi</th>
-                    <th>Berat</th>
-                    <th>BMI</th>
-                    <th>Status</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($recentMeasurements as $m)
-                <tr>
-                    <td>{{ $m->measured_at->format('d M Y') }}</td>
-                    <td>{{ number_format($m->height_cm, 1) }} cm</td>
-                    <td>{{ number_format($m->weight_kg, 1) }} kg</td>
-                    <td>{{ number_format($m->bmi, 1) }}</td>
-                    <td>
-                        <span class="badge badge-{{ strtolower($m->bmi_category) }}">
-                            {{ $m->bmi_category }}
-                        </span>
-                    </td>
-                    <td>
-                        <a href="{{ route('measurements.show', $m) }}" class="btn btn-secondary btn-sm">Detail</a>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Tinggi</th>
+                        <th>Berat</th>
+                        <th>Z-Score</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($recentMeasurements as $m)
+                    <tr>
+                        <td>{{ $m->measured_at->format('d M Y') }}</td>
+                        <td>{{ number_format($m->height_cm, 1) }} cm</td>
+                        <td>{{ number_format($m->weight_kg, 1) }} kg</td>
+                        <td>{{ number_format($m->z_score, 2) }}</td>
+                        <td>
+                            <span class="badge badge-{{ strtolower(str_replace(' ', '-', $m->stunting_category)) }}">
+                                {{ $m->stunting_category }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ route('measurements.show', $m) }}" class="btn btn-secondary btn-sm">Detail</a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
     @else
         <div class="empty-state">
             <div class="empty-state-icon">📋</div>
@@ -124,9 +130,14 @@
 document.addEventListener('DOMContentLoaded', function() {
     const chartData = @json($chartData);
 
+    // Theme aware color helpers
+    const getGridColor = () => document.documentElement.classList.contains('light-theme') ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)';
+    const getLegendColor = () => document.documentElement.classList.contains('light-theme') ? '#475569' : '#94a3b8';
+    const getChartBgColor = () => document.documentElement.classList.contains('light-theme') ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)';
+
     // Trend Chart
     const trendCtx = document.getElementById('trendChart').getContext('2d');
-    new Chart(trendCtx, {
+    const trendChart = new Chart(trendCtx, {
         type: 'line',
         data: {
             labels: chartData.map(d => {
@@ -169,17 +180,17 @@ document.addEventListener('DOMContentLoaded', function() {
             interaction: { intersect: false, mode: 'index' },
             plugins: {
                 legend: {
-                    labels: { color: '#94a3b8', font: { family: 'Inter' } }
+                    labels: { color: getLegendColor(), font: { family: 'Inter' } }
                 }
             },
             scales: {
                 x: {
-                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    grid: { color: getGridColor() },
                     ticks: { color: '#64748b', font: { family: 'Inter' } }
                 },
                 y: {
                     position: 'left',
-                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    grid: { color: getGridColor() },
                     ticks: { color: '#3b82f6', font: { family: 'Inter' } },
                     title: { display: true, text: 'Berat (kg)', color: '#3b82f6', font: { family: 'Inter' } }
                 },
@@ -193,32 +204,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // BMI Doughnut Chart
+    // Stunting Doughnut Chart
     const bmiCtx = document.getElementById('bmiChart').getContext('2d');
-    const bmiCategories = {};
-    chartData.forEach(d => {
-        const cat = d.bmi_category || 'Unknown';
-        bmiCategories[cat] = (bmiCategories[cat] || 0) + 1;
-    });
+    const stuntingCounts = @json($stuntingCounts);
+    const bmiLabels = Object.keys(stuntingCounts).filter(k => stuntingCounts[k] > 0);
+    const bmiValues = bmiLabels.map(k => stuntingCounts[k]);
 
-    const bmiColors = {
-        'Kurus': '#3b82f6',
-        'Normal': '#10b981',
-        'Gemuk': '#f59e0b',
-        'Obesitas': '#ef4444'
+    const stuntingColors = {
+        'Sangat Stunting': '#ef4444',
+        'Stunting': '#f59e0b',
+        'Normal': '#10b981'
     };
 
-    const bmiLabels = Object.keys(bmiCategories);
-    const bmiValues = Object.values(bmiCategories);
-    const bgColors = bmiLabels.map(l => bmiColors[l] || '#64748b');
+    const bgColors = bmiLabels.map(l => stuntingColors[l] || '#64748b');
 
-    new Chart(bmiCtx, {
+    const bmiChart = new Chart(bmiCtx, {
         type: 'doughnut',
         data: {
             labels: bmiLabels.length > 0 ? bmiLabels : ['Belum ada data'],
             datasets: [{
                 data: bmiValues.length > 0 ? bmiValues : [1],
-                backgroundColor: bgColors.length > 0 && bmiValues.length > 0 ? bgColors : ['rgba(255,255,255,0.05)'],
+                backgroundColor: bgColors.length > 0 && bmiValues.length > 0 ? bgColors : [getChartBgColor()],
                 borderColor: 'transparent',
                 borderWidth: 2,
             }]
@@ -230,10 +236,30 @@ document.addEventListener('DOMContentLoaded', function() {
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: { color: '#94a3b8', padding: 16, font: { family: 'Inter' } }
+                    labels: { color: getLegendColor(), padding: 16, font: { family: 'Inter' } }
                 }
             }
         }
+    });
+
+    // Update charts on theme toggle
+    window.addEventListener('themeToggled', () => {
+        const gridColor = getGridColor();
+        const legendColor = getLegendColor();
+        const chartBgColor = getChartBgColor();
+
+        // Update trend chart
+        trendChart.options.scales.x.grid.color = gridColor;
+        trendChart.options.scales.y.grid.color = gridColor;
+        trendChart.options.plugins.legend.labels.color = legendColor;
+        trendChart.update();
+
+        // Update bmi chart
+        if (bmiValues.length === 0) {
+            bmiChart.data.datasets[0].backgroundColor = [chartBgColor];
+        }
+        bmiChart.options.plugins.legend.labels.color = legendColor;
+        bmiChart.update();
     });
 });
 </script>

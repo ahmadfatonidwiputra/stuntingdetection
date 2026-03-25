@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'BodyTrack') }} - Pengukuran Tubuh</title>
+        <title>{{ config('app.name', 'AI Stunt Detect') }} - Pengukuran Tubuh</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -363,11 +363,13 @@
                 color: var(--text-muted);
                 font-weight: 600;
                 border-bottom: 1px solid var(--border-glass);
+                white-space: nowrap;
             }
 
             .data-table td {
                 padding: 14px 16px;
                 font-size: 14px;
+                white-space: nowrap;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.04);
                 vertical-align: middle;
             }
@@ -390,10 +392,9 @@
                 font-weight: 600;
             }
 
-            .badge-kurus { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+            .badge-sangat-stunting { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
             .badge-normal { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
-            .badge-gemuk { background: rgba(245, 158, 11, 0.15); color: var(--accent-orange); }
-            .badge-obesitas { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+            .badge-stunting { background: rgba(245, 158, 11, 0.15); color: var(--accent-orange); }
 
             /* Buttons */
             .btn {
@@ -674,6 +675,8 @@
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                flex-wrap: wrap;
+                gap: 12px;
             }
 
             /* Mobile Hamburger */
@@ -858,7 +861,32 @@
             .fade-in:nth-child(3) { animation-delay: 0.15s; }
             .fade-in:nth-child(4) { animation-delay: 0.2s; }
         </style>
+        <style>
+            /* Light Theme Variables */
+            html.light-theme {
+                --bg-primary: #f8fafc;
+                --bg-secondary: #f1f5f9;
+                --bg-card: rgba(255, 255, 255, 0.9);
+                --bg-glass: rgba(255, 255, 255, 0.6);
+                --border-glass: rgba(0, 0, 0, 0.08);
+                --text-primary: #0f172a;
+                --text-secondary: #334155;
+                --text-muted: #64748b;
+                --shadow-glow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            }
+            html.light-theme body::before {
+                opacity: 0.5;
+            }
+            html.light-theme .glass-card {
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            }
+        </style>
 
+        <script>
+            if (localStorage.getItem('theme') === 'light' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+                document.documentElement.classList.add('light-theme');
+            }
+        </script>
         @stack('styles')
     </head>
     <body>
@@ -877,7 +905,7 @@
             <aside class="sidebar" id="sidebar">
                 <div class="sidebar-brand">
                     <div class="sidebar-brand-icon">📏</div>
-                    <span class="sidebar-brand-text">BodyTrack</span>
+                    <span class="sidebar-brand-text">AI Stunt Detect</span>
                 </div>
 
                 <nav class="sidebar-nav">
@@ -936,6 +964,23 @@
                 </nav>
 
                 <div class="sidebar-footer">
+                    <button id="theme-toggle" class="nav-link" style="width: 100%; border: none; background: transparent; cursor: pointer; margin-bottom: 12px; justify-content: flex-start; padding-left: 12px;">
+                        <svg class="nav-icon" id="theme-icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                        <svg class="nav-icon" id="theme-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                        <span id="theme-text">Mode Terang</span>
+                    </button>
                     <div class="user-info">
                         <div class="user-avatar">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</div>
                         <div class="user-details">
@@ -967,6 +1012,37 @@
                 document.getElementById('sidebar').classList.toggle('open');
                 document.getElementById('sidebar-overlay').classList.toggle('active');
             }
+
+            // Theme Toggle Logic
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const iconDark = document.getElementById('theme-icon-dark');
+            const iconLight = document.getElementById('theme-icon-light');
+            const themeText = document.getElementById('theme-text');
+
+            function updateThemeUI() {
+                if (document.documentElement.classList.contains('light-theme')) {
+                    iconDark.style.display = 'block';
+                    iconLight.style.display = 'none';
+                    themeText.textContent = 'Mode Gelap';
+                    document.documentElement.style.colorScheme = 'light';
+                } else {
+                    iconDark.style.display = 'none';
+                    iconLight.style.display = 'block';
+                    themeText.textContent = 'Mode Terang';
+                    document.documentElement.style.colorScheme = 'dark';
+                }
+            }
+
+            updateThemeUI();
+
+            themeToggleBtn.addEventListener('click', () => {
+                document.documentElement.classList.toggle('light-theme');
+                const isLight = document.documentElement.classList.contains('light-theme');
+                localStorage.setItem('theme', isLight ? 'light' : 'dark');
+                updateThemeUI();
+                
+                window.dispatchEvent(new Event('themeToggled'));
+            });
         </script>
 
         @stack('scripts')

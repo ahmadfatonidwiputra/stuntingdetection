@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Measurement;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -17,9 +16,15 @@ class DashboardController extends Controller
 
         $totalMeasurements = $measurements->count();
         $latestMeasurement = $measurements->first();
-        $avgBmi = $measurements->avg('bmi');
+        $avgZScore = $measurements->avg('z_score');
         $avgHeight = $measurements->avg('height_cm');
         $avgWeight = $measurements->avg('weight_kg');
+
+        $stuntingCounts = [
+            'Sangat Stunting' => $measurements->where('stunting_category', 'Sangat Stunting')->count(),
+            'Stunting' => $measurements->where('stunting_category', 'Stunting')->count(),
+            'Normal' => $measurements->where('stunting_category', 'Normal')->count(),
+        ];
 
         // Data for charts (last 10 measurements, reversed for chronological)
         $chartData = $measurements->take(10)->reverse()->values();
@@ -29,11 +34,12 @@ class DashboardController extends Controller
         return view('dashboard', compact(
             'totalMeasurements',
             'latestMeasurement',
-            'avgBmi',
+            'avgZScore',
             'avgHeight',
             'avgWeight',
             'chartData',
-            'recentMeasurements'
+            'recentMeasurements',
+            'stuntingCounts'
         ));
     }
 }

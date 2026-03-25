@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,8 +19,14 @@ class RegisteredUserController extends Controller
     /**
      * Display the registration view.
      */
-    public function create(): View
+    public function create(): View|RedirectResponse
     {
+        if (! User::needsInitialSuperadmin()) {
+            return redirect()
+                ->route('login')
+                ->with('status', 'Registrasi publik sudah ditutup. Silakan masuk dengan akun superadmin yang terdaftar.');
+        }
+
         return view('auth.register');
     }
 
@@ -30,17 +37,34 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        if (! User::needsInitialSuperadmin()) {
+            throw ValidationException::withMessages([
+                'email' => 'Registrasi publik sudah ditutup. Akun superadmin sudah tersedia.',
+            ]);
+        }
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+        try {
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'is_superadmin' => true,
+                'password' => Hash::make($request->password),
+            ]);
+        } catch (QueryException $exception) {
+            if (! User::needsInitialSuperadmin()) {
+                throw ValidationException::withMessages([
+                    'email' => 'Registrasi superadmin pertama sudah selesai. Silakan masuk dengan akun yang tersedia.',
+                ]);
+            }
+
+            throw $exception;
+        }
 
         event(new Registered($user));
 
