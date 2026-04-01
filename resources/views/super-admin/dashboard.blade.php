@@ -70,7 +70,7 @@
         <a href="{{ route('super-admin.petugas.index', ['tab' => 'pending']) }}" class="btn btn-primary btn-sm">Lihat Semua →</a>
     </div>
 
-    <div style="overflow-x: auto;">
+    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
         <table class="data-table">
             <thead>
                 <tr>

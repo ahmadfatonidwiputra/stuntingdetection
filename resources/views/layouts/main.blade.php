@@ -238,6 +238,9 @@
                 margin-left: var(--sidebar-width);
                 padding: 32px;
                 min-height: 100vh;
+                min-width: 0;
+                max-width: 100%;
+                overflow-x: hidden;
             }
 
             .page-header {
