@@ -31,6 +31,30 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        $user = $request->user();
+
+        // Redirect based on role and status
+        if ($user->isSuperAdmin()) {
+            return redirect()->intended(route('super-admin.dashboard', absolute: false));
+        }
+
+        if ($user->isPetugas()) {
+            if ($user->isPending()) {
+                return redirect()->route('petugas.pending');
+            }
+
+            if ($user->isRejected()) {
+                return redirect()->route('petugas.rejected');
+            }
+
+            if ($user->isSuspended()) {
+                return redirect()->route('petugas.suspended');
+            }
+
+            // Active petugas
+            return redirect()->intended(route('dashboard', absolute: false));
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
