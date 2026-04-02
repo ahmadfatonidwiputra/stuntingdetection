@@ -89,8 +89,11 @@
             <button type="submit" class="login-btn">Masuk</button>
 
             <div class="login-footer">
-                <span style="color: var(--text-muted); font-size: 13px;">Belum punya akun?</span>
-                <a href="{{ route('register.petugas') }}" class="login-link">Daftar sebagai Petugas →</a>
+                <span style="color: var(--text-muted); font-size: 13px;">Daftar sebagai:</span>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <a href="{{ route('register.petugas') }}" class="login-link">Petugas Posyandu →</a>
+                    <a href="{{ route('register.orang-tua') }}" class="login-link" style="color: #10b981;">Orang Tua →</a>
+                </div>
             </div>
         </form>
     </div>

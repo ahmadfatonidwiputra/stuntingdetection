@@ -137,6 +137,22 @@
         }
         .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(14,165,233,0.4); }
 
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content {
+            display: none; position: absolute; right: 0; top: 100%; min-width: 180px;
+            background: var(--nav-bg); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2); padding: 8px 0; z-index: 101;
+            margin-top: 8px; /* give some space */
+        }
+        .dropdown:hover .dropdown-content { display: block; }
+        .dropdown-content a {
+            display: block; padding: 10px 16px; color: var(--text);
+            text-decoration: none; font-size: 14px; transition: background 0.2s;
+            border-radius: 0;
+        }
+        .dropdown-content a:hover { background: var(--glass-hover); color: var(--primary); }
+
         .theme-toggle-btn {
             background: transparent; border: 1px solid var(--glass-border);
             color: var(--text); border-radius: 8px; width: 36px; height: 36px;
@@ -303,12 +319,20 @@
                     @auth
                         @if(auth()->user()->isSuperAdmin())
                             <li><a href="{{ route('super-admin.dashboard') }}" class="nav-btn">Dashboard</a></li>
+                        @elseif(auth()->user()->isOrangTua())
+                            <li><a href="{{ route('orang-tua.dashboard') }}" class="nav-btn">Dashboard</a></li>
                         @else
                             <li><a href="{{ route('dashboard') }}" class="nav-btn">Dashboard</a></li>
                         @endif
                     @else
                         <li><a href="{{ route('login') }}">Masuk</a></li>
-                        <li><a href="{{ route('register.petugas') }}" class="nav-btn">Daftar Petugas</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="nav-btn">Daftar ▼</a>
+                            <div class="dropdown-content">
+                                <a href="{{ route('register.petugas') }}">Sebagai Petugas Posyandu</a>
+                                <a href="{{ route('register.orang-tua') }}">Sebagai Orang Tua</a>
+                            </div>
+                        </li>
                     @endauth
                     <li>
                         <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle Theme">
@@ -332,12 +356,16 @@
             @auth
                 @if(auth()->user()->isSuperAdmin())
                     <a href="{{ route('super-admin.dashboard') }}">Dashboard</a>
+                @elseif(auth()->user()->isOrangTua())
+                    <a href="{{ route('orang-tua.dashboard') }}">Dashboard</a>
                 @else
                     <a href="{{ route('dashboard') }}">Dashboard</a>
                 @endif
             @else
                 <a href="{{ route('login') }}">Masuk</a>
-                <a href="{{ route('register.petugas') }}">Daftar Petugas</a>
+                <div style="padding: 12px 16px 4px 16px; color: var(--text-muted); font-size: 13px; font-weight: 700; text-transform: uppercase;">Daftar</div>
+                <a href="{{ route('register.petugas') }}" style="padding-left: 24px; border-left: 2px solid var(--glass-border); margin-left: 16px;">Sebagai Petugas Posyandu</a>
+                <a href="{{ route('register.orang-tua') }}" style="padding-left: 24px; border-left: 2px solid var(--glass-border); margin-left: 16px;">Sebagai Orang Tua</a>
             @endauth
             <!-- Theme Toggle for Mobile is handled automatically by CSS/data-theme, but let's add a mobile button too -->
             <a href="#" id="mobileThemeToggle" onclick="event.preventDefault(); toggleTheme();">Ganti Tema (Gelap/Terang)</a>

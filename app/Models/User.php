@@ -48,6 +48,16 @@ class User extends Authenticatable
         return $this->role === 'petugas_posyandu';
     }
 
+    public function isPetugasPosyandu(): bool
+    {
+        return $this->role === 'petugas_posyandu';
+    }
+
+    public function isOrangTua(): bool
+    {
+        return $this->role === 'orang_tua';
+    }
+
     // ── Status Helpers ────────────────────────────
 
     public function isActive(): bool
@@ -82,6 +92,11 @@ class User extends Authenticatable
         return $query->where('role', 'petugas_posyandu');
     }
 
+    public function scopeOrangTua(Builder $query): Builder
+    {
+        return $query->where('role', 'orang_tua');
+    }
+
     public function scopeStatus(Builder $query, string $status): Builder
     {
         return $query->where('status', $status);
@@ -92,6 +107,11 @@ class User extends Authenticatable
     public function petugasProfile(): HasOne
     {
         return $this->hasOne(PetugasProfile::class);
+    }
+
+    public function orangTuaProfile(): HasOne
+    {
+        return $this->hasOne(OrangTuaProfile::class);
     }
 
     public function measurements(): HasMany

@@ -55,6 +55,19 @@ class AuthenticatedSessionController extends Controller
             return redirect()->intended(route('dashboard', absolute: false));
         }
 
+        // Orang Tua
+        if ($user->isOrangTua()) {
+            if ($user->isPending()) {
+                return redirect()->route('orang-tua.pending');
+            }
+
+            if (in_array($user->status, ['rejected', 'suspended'])) {
+                return redirect()->route('orang-tua.rejected');
+            }
+
+            return redirect()->intended(route('orang-tua.dashboard', absolute: false));
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

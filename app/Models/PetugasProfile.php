@@ -9,6 +9,7 @@ class PetugasProfile extends Model
 {
     protected $fillable = [
         'user_id',
+        'posyandu_id',
         'nama_lengkap',
         'nik',
         'no_telepon',
@@ -31,6 +32,11 @@ class PetugasProfile extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function posyandu(): BelongsTo
+    {
+        return $this->belongsTo(Posyandu::class);
     }
 
     public function verifiedByUser(): BelongsTo

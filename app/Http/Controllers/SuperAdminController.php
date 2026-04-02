@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Measurement;
 use App\Models\PetugasProfile;
+use App\Models\Posyandu;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -199,4 +200,71 @@ class SuperAdminController extends Controller
         return redirect()->route('super-admin.petugas.index')
             ->with('success', "Akun petugas {$name} berhasil dihapus.");
     }
+
+    // ── CRUD Posyandu ─────────────────────────────────
+
+    public function posyanduIndex()
+    {
+        $posyandu = Posyandu::withCount(['petugas', 'anak'])->latest()->paginate(15);
+        return view('super-admin.posyandu.index', compact('posyandu'));
+    }
+
+    public function posyanduCreate()
+    {
+        return view('super-admin.posyandu.create');
+    }
+
+    public function posyanduStore(Request $request)
+    {
+        $validated = $request->validate([
+            'nama'          => 'required|string|max:200|unique:posyandu,nama',
+            'kode_posyandu' => 'nullable|string|max:20|unique:posyandu,kode_posyandu',
+            'alamat'        => 'nullable|string',
+            'kelurahan'     => 'nullable|string|max:100',
+            'kecamatan'     => 'nullable|string|max:100',
+            'kota'          => 'nullable|string|max:100',
+            'provinsi'      => 'nullable|string|max:100',
+            'no_telepon'    => 'nullable|string|max:15',
+            'status'        => 'required|in:active,inactive',
+        ]);
+
+        Posyandu::create($validated);
+
+        return redirect()->route('super-admin.posyandu.index')
+            ->with('success', "Posyandu {$validated['nama']} berhasil ditambahkan.");
+    }
+
+    public function posyanduEdit(Posyandu $posyandu)
+    {
+        return view('super-admin.posyandu.edit', compact('posyandu'));
+    }
+
+    public function posyanduUpdate(Request $request, Posyandu $posyandu)
+    {
+        $validated = $request->validate([
+            'nama'          => 'required|string|max:200|unique:posyandu,nama,' . $posyandu->id,
+            'kode_posyandu' => 'nullable|string|max:20|unique:posyandu,kode_posyandu,' . $posyandu->id,
+            'alamat'        => 'nullable|string',
+            'kelurahan'     => 'nullable|string|max:100',
+            'kecamatan'     => 'nullable|string|max:100',
+            'kota'          => 'nullable|string|max:100',
+            'provinsi'      => 'nullable|string|max:100',
+            'no_telepon'    => 'nullable|string|max:15',
+            'status'        => 'required|in:active,inactive',
+        ]);
+
+        $posyandu->update($validated);
+
+        return redirect()->route('super-admin.posyandu.index')
+            ->with('success', "Data posyandu berhasil diperbarui.");
+    }
+
+    public function posyanduDestroy(Posyandu $posyandu)
+    {
+        $nama = $posyandu->nama;
+        $posyandu->delete();
+        return redirect()->route('super-admin.posyandu.index')
+            ->with('success', "Posyandu {$nama} berhasil dihapus.");
+    }
 }
+

@@ -18,11 +18,7 @@
                     Sistem pemantauan pertumbuhan anak berbasis AI yang membantu petugas posyandu mendeteksi stunting lebih awal dan akurat menggunakan standar WHO.
                 </p>
                 <div class="hero-buttons" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                    <a href="{{ route('register.petugas') }}" class="btn-primary">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-                        Daftar Sebagai Petugas
-                    </a>
-                    <a href="{{ route('tentang-stunting') }}" class="btn-outline">
+                    <a href="{{ route('tentang-stunting') }}" class="btn-primary">
                         Pelajari Stunting →
                     </a>
                 </div>
@@ -36,7 +32,7 @@
                             <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Pemantauan Real-time</h3>
                             <p style="color: var(--text-muted); font-size: 14px;">Z-Score & Klasifikasi WHO</p>
                         </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+                        <div class="hero-stats-grid">
                             <div style="text-align: center; padding: 16px; background: rgba(16,185,129,0.1); border-radius: 12px; border: 1px solid rgba(16,185,129,0.2);">
                                 <div style="font-size: 24px; font-weight: 800; color: #10b981;">Normal</div>
                                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Z ≥ -2</div>
@@ -60,13 +56,25 @@
 </section>
 
 <style>
+    .hero-stats-grid {
+        display: grid; 
+        grid-template-columns: 1fr 1fr 1fr; 
+        gap: 16px;
+    }
     @keyframes float {
         0%, 100% { transform: translateY(0); }
         50% { transform: translateY(-10px); }
     }
     @media (max-width: 768px) {
         section:first-of-type > div > div { grid-template-columns: 1fr !important; }
-        section:first-of-type h1 { font-size: 36px !important; }
+        section:first-of-type h1 { 
+            font-size: 32px !important; 
+            line-height: 1.2 !important;
+            word-break: break-word; /* Prevents long words from breaking container */
+        }
+        .hero-stats-grid {
+            grid-template-columns: 1fr; /* Stack the 3 cards vertically on mobile */
+        }
     }
 </style>
 

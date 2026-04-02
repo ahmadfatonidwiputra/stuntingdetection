@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Measurement;
 use App\Models\PetugasProfile;
+use App\Models\Posyandu;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -14,6 +15,12 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
+        // ── Posyandu (Master Data) ──────────────────
+        $this->call(PosyanduSeeder::class);
+
+        $posyanduMelati = Posyandu::where('nama', 'Posyandu Melati 1')->first();
+        $posyanduMawar  = Posyandu::where('nama', 'Posyandu Mawar')->first();
+        $posyanduDahlia = Posyandu::where('nama', 'Posyandu Dahlia')->first();
         // ── Super Admin ────────────────────────────
         $admin = User::create([
             'name' => 'Super Admin',
@@ -35,18 +42,19 @@ class DatabaseSeeder extends Seeder
         ]);
 
         PetugasProfile::create([
-            'user_id' => $petugasActive->id,
-            'nama_lengkap' => 'Siti Nurhaliza',
-            'nik' => '3201012345670001',
-            'no_telepon' => '081234567890',
-            'posyandu_name' => 'Posyandu Melati',
+            'user_id'        => $petugasActive->id,
+            'posyandu_id'    => $posyanduMelati?->id,
+            'nama_lengkap'   => 'Siti Nurhaliza',
+            'nik'            => '3201012345670001',
+            'no_telepon'     => '081234567890',
+            'posyandu_name'  => 'Posyandu Melati 1',
             'posyandu_address' => 'Jl. Merdeka No. 10',
-            'kelurahan' => 'Sukamaju',
-            'kecamatan' => 'Cilandak',
-            'kota' => 'Jakarta Selatan',
-            'provinsi' => 'DKI Jakarta',
-            'verified_by' => $admin->id,
-            'verified_at' => now(),
+            'kelurahan'      => 'Sukamaju',
+            'kecamatan'      => 'Cilandak',
+            'kota'           => 'Jakarta Selatan',
+            'provinsi'       => 'DKI Jakarta',
+            'verified_by'    => $admin->id,
+            'verified_at'    => now(),
         ]);
 
         // Create sample measurements for active petugas
@@ -84,16 +92,17 @@ class DatabaseSeeder extends Seeder
         ]);
 
         PetugasProfile::create([
-            'user_id' => $petugasPending->id,
-            'nama_lengkap' => 'Dewi Lestari',
-            'nik' => '3201012345670002',
-            'no_telepon' => '081234567891',
-            'posyandu_name' => 'Posyandu Mawar',
+            'user_id'        => $petugasPending->id,
+            'posyandu_id'    => $posyanduMawar?->id,
+            'nama_lengkap'   => 'Dewi Lestari',
+            'nik'            => '3201012345670002',
+            'no_telepon'     => '081234567891',
+            'posyandu_name'  => 'Posyandu Mawar',
             'posyandu_address' => 'Jl. Kenanga No. 5',
-            'kelurahan' => 'Cipete',
-            'kecamatan' => 'Cilandak',
-            'kota' => 'Jakarta Selatan',
-            'provinsi' => 'DKI Jakarta',
+            'kelurahan'      => 'Cipete',
+            'kecamatan'      => 'Cilandak',
+            'kota'           => 'Jakarta Selatan',
+            'provinsi'       => 'DKI Jakarta',
         ]);
 
         // ── Rejected Petugas ───────────────────────
@@ -106,16 +115,17 @@ class DatabaseSeeder extends Seeder
         ]);
 
         PetugasProfile::create([
-            'user_id' => $petugasRejected->id,
-            'nama_lengkap' => 'Rina Susanti',
-            'nik' => '3201012345670003',
-            'no_telepon' => '081234567892',
-            'posyandu_name' => 'Posyandu Dahlia',
+            'user_id'        => $petugasRejected->id,
+            'posyandu_id'    => $posyanduDahlia?->id,
+            'nama_lengkap'   => 'Rina Susanti',
+            'nik'            => '3201012345670003',
+            'no_telepon'     => '081234567892',
+            'posyandu_name'  => 'Posyandu Dahlia',
             'posyandu_address' => 'Jl. Anggrek No. 3',
-            'kelurahan' => 'Lebak Bulus',
-            'kecamatan' => 'Cilandak',
-            'kota' => 'Jakarta Selatan',
-            'provinsi' => 'DKI Jakarta',
+            'kelurahan'      => 'Lebak Bulus',
+            'kecamatan'      => 'Cilandak',
+            'kota'           => 'Jakarta Selatan',
+            'provinsi'       => 'DKI Jakarta',
             'rejection_reason' => 'Dokumen Surat Tugas tidak lengkap. Mohon lampirkan SK Pengangkatan dari Kelurahan.',
         ]);
     }

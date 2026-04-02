@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\ActivePetugasMiddleware;
+use App\Http\Middleware\CheckOrangTuaMiddleware;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -16,8 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         $middleware->alias([
-            'role' => RoleMiddleware::class,
+            'role'         => RoleMiddleware::class,
             'active.petugas' => ActivePetugasMiddleware::class,
+            'orang.tua'    => CheckOrangTuaMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
