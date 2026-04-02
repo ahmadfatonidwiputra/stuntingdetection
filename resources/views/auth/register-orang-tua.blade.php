@@ -43,13 +43,16 @@
     /* Select2 Theme Overrides */
     .select2-container--default .select2-selection--single {
         background: var(--bg-main); border: 1px solid var(--glass-border);
-        border-radius: 10px; padding: 6px 14px; height: 44px; outline: none;
+        border-radius: 10px; height: 44px; outline: none; display: flex; align-items: center;
     }
     .select2-container--default .select2-selection--single .select2-selection__rendered {
-        color: var(--text); line-height: 30px; font-size: 14px; padding-left: 0;
+        color: var(--text); font-size: 14px; padding-left: 14px; padding-right: 32px; width: 100%;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__placeholder {
+        color: var(--text-muted); font-size: 14px;
     }
     .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 42px; right: 10px;
+        height: 44px; right: 10px; display: flex; align-items: center;
     }
     .select2-dropdown {
         background: var(--bg-main); border: 1px solid var(--glass-border);
