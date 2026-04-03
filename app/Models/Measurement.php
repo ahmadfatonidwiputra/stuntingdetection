@@ -9,6 +9,7 @@ class Measurement extends Model
 {
     protected $fillable = [
         'user_id',
+        'anak_id',
         'child_name',
         'parent_name',
         'posyandu_name',
@@ -36,6 +37,11 @@ class Measurement extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function anak(): BelongsTo
+    {
+        return $this->belongsTo(Anak::class, 'anak_id');
     }
 
     public static function calculateZScore(float $heightCm, int $ageMonths, string $gender): float

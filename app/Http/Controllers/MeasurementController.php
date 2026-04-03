@@ -2,57 +2,96 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Anak;
 use App\Models\Measurement;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class MeasurementController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Measurement::where('user_id', Auth::id())
-            ->orderBy('measured_at', 'desc');
+        $user = $request->user();
+        $posyanduId = $user->petugasProfile?->posyandu_id;
+        $hasDateFilter = $request->filled('from') || $request->filled('to');
 
-        if ($request->filled('from')) {
-            $query->whereDate('measured_at', '>=', $request->from);
+        $latestMeasuredAtSubquery = Measurement::query()
+            ->select('measured_at')
+            ->whereColumn('anak_id', 'anak.id')
+            ->tap(fn (Builder $query) => $this->applyDateFilters($query, $request))
+            ->latest('measured_at')
+            ->limit(1);
+
+        $query = Anak::query()
+            ->when(
+                $posyanduId,
+                fn (Builder $query) => $query->where('posyandu_id', $posyanduId),
+                fn (Builder $query) => $query->whereRaw('1 = 0')
+            )
+            ->whereHas('measurements', fn ($query) => $this->applyDateFilters($query, $request))
+            ->withCount([
+                'measurements as filtered_measurements_count' => fn ($query) => $this->applyDateFilters($query, $request),
+            ])
+            ->orderByDesc($latestMeasuredAtSubquery)
+            ->orderBy('nama');
+
+        if ($hasDateFilter) {
+            $query->with([
+                'measurements' => fn ($query) => $this->applyDateFilters($query, $request)
+                    ->latest('measured_at'),
+            ]);
+        } else {
+            $query->with('latestMeasurement');
         }
-        if ($request->filled('to')) {
-            $query->whereDate('measured_at', '<=', $request->to);
-        }
 
-        $measurements = $query->paginate(10);
+        $anakList = $query->paginate(10)->withQueryString();
 
-        return view('measurements.index', compact('measurements'));
+        return view('measurements.index', compact('anakList', 'hasDateFilter'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('measurements.create');
+        $selectedAnakId = $request->query('anak_id') ?: $request->session()->getOldInput('anak_id');
+        $selectedAnak = null;
+
+        if ($selectedAnakId) {
+            $selectedAnak = Anak::with('posyandu')->findOrFail($selectedAnakId);
+            $this->ensureCanAccessAnak($selectedAnak);
+        }
+
+        return view('measurements.create', compact('selectedAnak'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'child_name' => 'required|string|max:255',
-            'parent_name' => 'required|string|max:255',
-            'posyandu_name' => 'nullable|string|max:255',
-            'address' => 'required|string|max:500',
-            'birth_date' => 'required|date|before_or_equal:today',
-            'gender' => 'required|in:L,P',
+            'anak_id' => 'required|exists:anak,id',
             'height_cm' => 'required|numeric|min:30|max:150',
             'weight_kg' => 'required|numeric|min:1|max:50',
             'photo' => 'nullable|image|max:5120',
-            'measured_at' => 'required|date',
+            'measured_at' => 'required|date|before_or_equal:today',
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        $birthDate = Carbon::parse($validated['birth_date']);
+        $anak = Anak::with('posyandu')->findOrFail($validated['anak_id']);
+        $this->ensureCanAccessAnak($anak);
+
         $measuredAt = Carbon::parse($validated['measured_at']);
+        $birthDate = Carbon::parse($anak->tanggal_lahir);
+
+        if ($measuredAt->lt($birthDate)) {
+            throw ValidationException::withMessages([
+                'measured_at' => 'Tanggal pengukuran tidak boleh mendahului tanggal lahir anak.',
+            ]);
+        }
+
         $ageMonths = $birthDate->diffInMonths($measuredAt);
 
-        $zScore = Measurement::calculateZScore($validated['height_cm'], (int) $ageMonths, $validated['gender']);
+        $zScore = Measurement::calculateZScore($validated['height_cm'], (int) $ageMonths, $anak->jenis_kelamin);
         $stuntingCategory = Measurement::getStuntingCategory($zScore);
 
         $photoPath = null;
@@ -80,12 +119,13 @@ class MeasurementController extends Controller
 
         Measurement::create([
             'user_id' => Auth::id(),
-            'child_name' => $validated['child_name'],
-            'parent_name' => $validated['parent_name'],
-            'posyandu_name' => $validated['posyandu_name'] ?? null,
-            'address' => $validated['address'],
-            'birth_date' => $validated['birth_date'],
-            'gender' => $validated['gender'],
+            'anak_id' => $anak->id,
+            'child_name' => $anak->nama,
+            'parent_name' => $anak->nama_ibu ?: $anak->nama_ayah,
+            'posyandu_name' => $anak->posyandu?->nama ?? Auth::user()?->petugasProfile?->posyandu_name,
+            'address' => $anak->alamat,
+            'birth_date' => $anak->tanggal_lahir,
+            'gender' => $anak->jenis_kelamin,
             'height_cm' => $validated['height_cm'],
             'weight_kg' => $validated['weight_kg'],
             'z_score' => $zScore,
@@ -96,15 +136,32 @@ class MeasurementController extends Controller
             'notes' => $validated['notes'] ?? null,
         ]);
 
-        return redirect()->route('measurements.index')
+        return redirect()->route('measurements.anak.show', $anak)
             ->with('success', 'Pengukuran berhasil disimpan!');
+    }
+
+    public function showAnak(Anak $anak)
+    {
+        $this->ensureCanAccessAnak($anak);
+
+        $anak->load([
+            'posyandu',
+            'latestMeasurement',
+            'measurements' => fn ($query) => $query
+                ->with(['anak', 'user.petugasProfile'])
+                ->orderBy('measured_at'),
+        ]);
+
+        return view('measurements.anak-show', [
+            'anak' => $anak,
+            'latestMeasurement' => $anak->latestMeasurement,
+        ]);
     }
 
     public function show(Measurement $measurement)
     {
-        if ($measurement->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->ensureCanViewMeasurement($measurement);
+        $measurement->loadMissing(['anak', 'user.petugasProfile']);
 
         return view('measurements.show', compact('measurement'));
     }
@@ -125,7 +182,11 @@ class MeasurementController extends Controller
 
         $measurement->delete();
 
-        return redirect()->route('measurements.index')
+        return redirect()->to(
+            $measurement->anak_id
+                ? route('measurements.anak.show', $measurement->anak_id)
+                : route('measurements.index')
+        )
             ->with('success', 'Pengukuran berhasil dihapus!');
     }
 
@@ -136,7 +197,19 @@ class MeasurementController extends Controller
             return response()->json([]);
         }
 
-        $query = \App\Models\Anak::where(function($b) use ($q) {
+        $query = Anak::query()
+            ->select([
+                'id',
+                'nama',
+                'nik_anak',
+                'nama_ayah',
+                'nama_ibu',
+                'alamat',
+                'tanggal_lahir',
+                'jenis_kelamin',
+                'posyandu_id',
+            ])
+            ->where(function($b) use ($q) {
             $b->whereRaw('lower(nik_anak) like ?', ['%' . $q . '%'])
               ->orWhereRaw('lower(nama) like ?', ['%' . $q . '%']);
         });
@@ -196,5 +269,43 @@ class MeasurementController extends Controller
                 'error' => 'Gagal menghubungi Prediction API: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    private function applyDateFilters(Builder $query, Request $request): Builder
+    {
+        if ($request->filled('from')) {
+            $query->whereDate('measured_at', '>=', $request->from);
+        }
+
+        if ($request->filled('to')) {
+            $query->whereDate('measured_at', '<=', $request->to);
+        }
+
+        return $query;
+    }
+
+    private function ensureCanAccessAnak(Anak $anak): void
+    {
+        $user = Auth::user();
+        $posyanduId = $user?->petugasProfile?->posyandu_id;
+
+        if (! $user?->isPetugasPosyandu() || ! $posyanduId || (int) $anak->posyandu_id !== (int) $posyanduId) {
+            abort(403);
+        }
+    }
+
+    private function ensureCanViewMeasurement(Measurement $measurement): void
+    {
+        if ((int) $measurement->user_id === (int) Auth::id()) {
+            return;
+        }
+
+        $measurement->loadMissing('anak');
+
+        if (! $measurement->anak) {
+            abort(403);
+        }
+
+        $this->ensureCanAccessAnak($measurement->anak);
     }
 }

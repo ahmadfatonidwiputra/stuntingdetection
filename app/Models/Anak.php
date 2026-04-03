@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Builder;
@@ -39,6 +40,11 @@ class Anak extends Model
     public function measurements(): HasMany
     {
         return $this->hasMany(Measurement::class);
+    }
+
+    public function latestMeasurement(): HasOne
+    {
+        return $this->hasOne(Measurement::class)->latestOfMany('measured_at');
     }
 
     public function orangTuaRelations(): HasMany

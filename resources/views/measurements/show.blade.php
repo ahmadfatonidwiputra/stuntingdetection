@@ -1,9 +1,13 @@
 @extends('layouts.main')
 
 @section('content')
+@php
+    $canDelete = (int) $measurement->user_id === (int) auth()->id();
+    $backUrl = $measurement->anak_id ? route('measurements.anak.show', $measurement->anak_id) : route('measurements.index');
+@endphp
 <div class="page-header">
     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
-        <a href="{{ route('measurements.index') }}" class="btn btn-secondary btn-sm" style="padding: 8px;">
+        <a href="{{ $backUrl }}" class="btn btn-secondary btn-sm" style="padding: 8px;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="19" y1="12" x2="5" y2="12"/>
                 <polyline points="12 19 5 12 12 5"/>
@@ -80,7 +84,6 @@
             </div>
 
             <div style="text-align: center; padding: 20px; background: var(--bg-glass); border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
-            <div style="text-align: center; padding: 20px; background: var(--bg-glass); border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
                 <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Z-Score (TB/U)</div>
                 <div style="font-size: 42px; font-weight: 800; background: var(--gradient-3); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
                     {{ number_format($measurement->z_score, 2) }}
@@ -94,10 +97,22 @@
                 <span class="detail-row-label">Nama Anak</span>
                 <span class="detail-row-value">{{ $measurement->child_name }}</span>
             </div>
+            @if($measurement->anak?->nik_anak)
+            <div class="detail-row">
+                <span class="detail-row-label">NIK Anak</span>
+                <span class="detail-row-value">{{ $measurement->anak->nik_anak }}</span>
+            </div>
+            @endif
             <div class="detail-row">
                 <span class="detail-row-label">Nama Orang Tua</span>
                 <span class="detail-row-value">{{ $measurement->parent_name }}</span>
             </div>
+            @if($measurement->user)
+            <div class="detail-row">
+                <span class="detail-row-label">Dicatat Oleh</span>
+                <span class="detail-row-value">{{ $measurement->user->petugasProfile?->nama_lengkap ?? $measurement->user->name }}</span>
+            </div>
+            @endif
             <div class="detail-row">
                 <span class="detail-row-label">Tanggal Lahir</span>
                 <span class="detail-row-value">{{ $measurement->birth_date ? $measurement->birth_date->format('d F Y') : '-' }}</span>
@@ -158,9 +173,10 @@
             </div>
 
             <div style="display: flex; gap: 12px;">
-                <a href="{{ route('measurements.index') }}" class="btn btn-secondary" style="flex: 1; justify-content: center;">
+                <a href="{{ $backUrl }}" class="btn btn-secondary" style="flex: 1; justify-content: center;">
                     Kembali
                 </a>
+                @if($canDelete)
                 <form method="POST" action="{{ route('measurements.destroy', $measurement) }}" onsubmit="return confirm('Yakin hapus pengukuran ini?')" style="flex: 1;">
                     @csrf
                     @method('DELETE')
@@ -172,6 +188,11 @@
                         Hapus
                     </button>
                 </form>
+                @else
+                <div style="flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 12px; color: var(--text-muted); font-size: 12px; border: 1px dashed var(--border-glass); border-radius: var(--radius-sm);">
+                    Catatan dari petugas lain hanya bisa dilihat.
+                </div>
+                @endif
             </div>
         </div>
     </div>

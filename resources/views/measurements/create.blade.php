@@ -1,6 +1,12 @@
 @extends('layouts.main')
 
 @section('content')
+@php
+    $selectedParentName = $selectedAnak?->nama_ibu ?: $selectedAnak?->nama_ayah;
+    $selectedSearchLabel = $selectedAnak
+        ? trim($selectedAnak->nama . ' (' . ($selectedAnak->nik_anak ?: '-') . ')')
+        : '';
+@endphp
 <div class="page-header flex-between">
     <div>
         <h1 class="page-title">Pengukuran Baru</h1>
@@ -45,6 +51,7 @@
 
 <form method="POST" action="{{ route('measurements.store') }}" enctype="multipart/form-data" id="measurementForm">
     @csrf
+    <input type="hidden" name="anak_id" id="anakIdInput" value="{{ old('anak_id', $selectedAnak?->id) }}">
 
     <div class="grid-2">
         <!-- Left: Camera & Photo -->
@@ -134,40 +141,34 @@
 
             <div class="form-group" style="position: relative; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px dashed var(--glass-border);">
                 <label class="form-label" style="color: var(--accent-blue);">🔍 Cari Data Anak (Ketik NIK atau Nama)</label>
-                <input type="text" id="search-anak" class="form-input" placeholder="Masukkan minimal 3 karakter..." style="border-color: rgba(59, 130, 246, 0.3);">
+                <input type="text" id="search-anak" class="form-input" value="{{ $selectedSearchLabel }}" placeholder="Masukkan minimal 3 karakter..." style="border-color: rgba(59, 130, 246, 0.3);">
                 <div id="search-results" class="search-results" style="display:none;"></div>
-                <div class="autofill-box" id="autofill-info" style="margin-top: 10px;">
-                    ✅ Data anak berhasil diisi otomatis.
+                <div class="autofill-box" id="autofill-info" style="margin-top: 10px; display: {{ old('anak_id', $selectedAnak?->id) ? 'block' : 'none' }};">
+                    ✅ Data anak berhasil dipilih. Identitas anak akan diambil otomatis dari data master.
                 </div>
+                @error('anak_id')
+                    <p class="form-error">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="form-group">
                 <label class="form-label">NIK Anak</label>
-                <input type="text" name="nik_anak" id="nikAnakInput" class="form-input" value="{{ old('nik_anak') }}" placeholder="Otomatis terisi saat memilih data anak di atas" readonly style="background-color: var(--bg-color); cursor: default;">
+                <input type="text" id="nikAnakInput" class="form-input" value="{{ $selectedAnak?->nik_anak }}" placeholder="Otomatis terisi saat memilih data anak di atas" readonly style="background-color: var(--bg-color); cursor: default;">
             </div>
 
             <div class="form-group">
-                <label class="form-label">Nama Anak *</label>
-                <input type="text" name="child_name" class="form-input" value="{{ old('child_name') }}" placeholder="Masukkan nama anak" required>
-                @error('child_name')
-                    <p class="form-error">{{ $message }}</p>
-                @enderror
+                <label class="form-label">Nama Anak</label>
+                <input type="text" name="child_name" id="childNameInput" class="form-input" value="{{ $selectedAnak?->nama }}" placeholder="Terisi otomatis dari data anak" readonly style="background-color: var(--bg-color); cursor: default;">
             </div>
 
             <div class="form-group">
-                <label class="form-label">Nama Ibu Kandung *</label>
-                <input type="text" name="parent_name" class="form-input" value="{{ old('parent_name') }}" placeholder="Masukkan nama ibu kandung" required>
-                @error('parent_name')
-                    <p class="form-error">{{ $message }}</p>
-                @enderror
+                <label class="form-label">Nama Ibu Kandung</label>
+                <input type="text" name="parent_name" id="parentNameInput" class="form-input" value="{{ $selectedParentName }}" placeholder="Terisi otomatis dari data anak" readonly style="background-color: var(--bg-color); cursor: default;">
             </div>
 
             <div class="form-group">
-                <label class="form-label">Alamat *</label>
-                <textarea name="address" class="form-textarea" placeholder="Masukkan alamat lengkap" required>{{ old('address') }}</textarea>
-                @error('address')
-                    <p class="form-error">{{ $message }}</p>
-                @enderror
+                <label class="form-label">Alamat</label>
+                <textarea name="address" id="addressInput" class="form-textarea" placeholder="Terisi otomatis dari data anak" readonly style="background-color: var(--bg-color); cursor: default;">{{ $selectedAnak?->alamat }}</textarea>
             </div>
 
             @if(auth()->user()->isPetugasPosyandu() && auth()->user()->petugasProfile?->posyandu_name)
@@ -187,26 +188,21 @@
             @endif
 
             <div class="form-group">
-                <label class="form-label">Tanggal Lahir Anak *</label>
-                <input type="date" name="birth_date" id="birthDateInput" class="form-input" value="{{ old('birth_date') }}" max="{{ date('Y-m-d') }}" required>
-                @error('birth_date')
-                    <p class="form-error">{{ $message }}</p>
-                @enderror
+                <label class="form-label">Tanggal Lahir Anak</label>
+                <input type="date" name="birth_date" id="birthDateInput" class="form-input" value="{{ $selectedAnak?->tanggal_lahir?->format('Y-m-d') }}" max="{{ date('Y-m-d') }}" readonly style="background-color: var(--bg-color); cursor: default;">
             </div>
 
             <div class="form-group" style="margin-bottom: 20px;">
-                <label class="form-label">Jenis Kelamin *</label>
+                <label class="form-label">Jenis Kelamin</label>
                 <div style="display: flex; gap: 16px;">
                     <label style="display: flex; align-items: center; gap: 8px;">
-                        <input type="radio" name="gender" value="L" {{ old('gender') == 'L' ? 'checked' : '' }} required> Laki-laki
+                        <input type="radio" name="gender" value="L" {{ $selectedAnak?->jenis_kelamin == 'L' ? 'checked' : '' }} disabled> Laki-laki
                     </label>
                     <label style="display: flex; align-items: center; gap: 8px;">
-                        <input type="radio" name="gender" value="P" {{ old('gender') == 'P' ? 'checked' : '' }} required> Perempuan
+                        <input type="radio" name="gender" value="P" {{ $selectedAnak?->jenis_kelamin == 'P' ? 'checked' : '' }} disabled> Perempuan
                     </label>
                 </div>
-                @error('gender')
-                    <p class="form-error">{{ $message }}</p>
-                @enderror
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Data identitas anak mengikuti data master yang dipilih.</p>
             </div>
 
             <div class="form-group">
@@ -365,13 +361,18 @@ function renderAnakResults(data, q) {
 
 function selectAnak(i) {
     const d = window._anakData[i];
-    
-    const nikAnakInput = document.getElementById('nikAnakInput');
-    if (nikAnakInput) nikAnakInput.value = d.nik_anak || '';
 
-    document.querySelector('input[name="child_name"]').value = d.nama || '';
-    document.querySelector('input[name="parent_name"]').value = d.nama_ibu || d.nama_ayah || '';
-    document.querySelector('textarea[name="address"]').value = d.alamat || '';
+    const anakIdInput = document.getElementById('anakIdInput');
+    const nikAnakInput = document.getElementById('nikAnakInput');
+    const childNameInput = document.getElementById('childNameInput');
+    const parentNameInput = document.getElementById('parentNameInput');
+    const addressInput = document.getElementById('addressInput');
+
+    if (anakIdInput) anakIdInput.value = d.id || '';
+    if (nikAnakInput) nikAnakInput.value = d.nik_anak || '';
+    if (childNameInput) childNameInput.value = d.nama || '';
+    if (parentNameInput) parentNameInput.value = d.nama_ibu || d.nama_ayah || '';
+    if (addressInput) addressInput.value = d.alamat || '';
     
     if (d.tanggal_lahir) {
         const dateStr = new Date(d.tanggal_lahir).toISOString().split('T')[0];
@@ -386,7 +387,7 @@ function selectAnak(i) {
     if (typeof calculateAge === 'function') { calculateAge(); }
 
     searchAnakResults.style.display = 'none';
-    searchAnakInput.value = '';
+    searchAnakInput.value = `${d.nama || ''} (${d.nik_anak || '-'})`;
     autofillAnakInfo.style.display = 'block';
     
     setTimeout(() => { autofillAnakInfo.style.display = 'none'; }, 5000);
