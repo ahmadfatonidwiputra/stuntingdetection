@@ -127,6 +127,22 @@
             <div class="history-date">
                 📅 {{ \Carbon\Carbon::parse($pem->measured_at)->translatedFormat('d M Y') }}
             </div>
+            @if($pem->photo_path || $pem->pose_photo_path)
+            <div style="display: flex; gap: 8px;">
+                @if($pem->photo_path)
+                <a href="{{ Storage::disk('r2')->url($pem->photo_path) }}" target="_blank" style="width: 60px; height: 60px; border-radius: 10px; overflow: hidden; border: 1px solid var(--glass-border); display: block; position: relative;">
+                    <img src="{{ Storage::disk('r2')->url($pem->photo_path) }}" alt="Foto Asli" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: white; font-size: 9px; text-align: center; padding: 2px 0;">Asli</div>
+                </a>
+                @endif
+                @if($pem->pose_photo_path)
+                <a href="{{ Storage::disk('r2')->url($pem->pose_photo_path) }}" target="_blank" style="width: 60px; height: 60px; border-radius: 10px; overflow: hidden; border: 1px solid var(--glass-border); display: block; position: relative;">
+                    <img src="{{ Storage::disk('r2')->url($pem->pose_photo_path) }}" alt="Analisa Pose" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(139,92,246,0.8); color: white; font-size: 9px; text-align: center; padding: 2px 0;">Pose</div>
+                </a>
+                @endif
+            </div>
+            @endif
             <div class="history-stats">
                 <div class="history-stat">
                     <div class="label">Berat Badan</div>
