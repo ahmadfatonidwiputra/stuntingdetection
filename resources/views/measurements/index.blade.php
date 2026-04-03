@@ -77,7 +77,7 @@
                         <td>
                             @if($m->photo_path)
                                 <div style="width: 40px; height: 40px; border-radius: 8px; overflow: hidden; background: var(--bg-glass);">
-                                    <img src="{{ asset('storage/' . $m->photo_path) }}" alt="Foto" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <img src="{{ Storage::disk('r2')->url($m->photo_path) }}" alt="Foto" style="width: 100%; height: 100%; object-fit: cover;">
                                 </div>
                             @else
                                 <span style="color: var(--text-muted); font-size: 12px;">-</span>

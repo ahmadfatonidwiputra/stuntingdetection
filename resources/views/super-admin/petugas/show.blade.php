@@ -111,7 +111,7 @@
         @if($user->petugasProfile?->document_path)
         <div class="glass-card fade-in" style="margin-bottom: 24px;">
             <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 16px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">📄 Dokumen</h3>
-            <a href="{{ Storage::url($user->petugasProfile->document_path) }}" target="_blank" class="btn btn-secondary" style="width: 100%; justify-content: center;">
+            <a href="{{ Storage::disk('r2')->url($user->petugasProfile->document_path) }}" target="_blank" class="btn btn-secondary" style="width: 100%; justify-content: center;">
                 Lihat Dokumen →
             </a>
         </div>

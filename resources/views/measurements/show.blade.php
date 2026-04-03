@@ -31,7 +31,7 @@
                 <p style="font-size: 13px; font-weight: 600; color: var(--text-color); margin-bottom: 8px; text-align: center;">Foto Asli</p>
                 @if($measurement->photo_path)
                     <div class="detail-photo">
-                        <img src="{{ asset('storage/' . $measurement->photo_path) }}" alt="Foto Asli">
+                        <img src="{{ Storage::disk('r2')->url($measurement->photo_path) }}" alt="Foto Asli">
                     </div>
                 @else
                     <div class="empty-state" style="padding: 20px;">
@@ -45,7 +45,7 @@
                 <p style="font-size: 13px; font-weight: 600; color: var(--text-color); margin-bottom: 8px; text-align: center;">MediaPipe Pose</p>
                 @if($measurement->pose_photo_path)
                     <div class="detail-photo">
-                        <img src="{{ asset('storage/' . $measurement->pose_photo_path) }}" alt="Foto Pose ML">
+                        <img src="{{ Storage::disk('r2')->url($measurement->pose_photo_path) }}" alt="Foto Pose ML">
                     </div>
                 @else
                     <div class="empty-state" style="padding: 20px;">

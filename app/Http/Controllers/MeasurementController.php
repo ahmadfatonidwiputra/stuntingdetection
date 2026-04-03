@@ -57,14 +57,14 @@ class MeasurementController extends Controller
 
         $photoPath = null;
         if ($request->hasFile('photo')) {
-            $photoPath = $request->file('photo')->store('measurements', 'public');
+            $photoPath = $request->file('photo')->store('measurements', 'r2');
         } elseif ($request->filled('photo_base64')) {
             // Handle base64 photo from camera capture
             $imageData = $request->input('photo_base64');
             $imageData = preg_replace('/^data:image\/\w+;base64,/', '', $imageData);
             $imageData = base64_decode($imageData);
             $filename = 'measurements/'.uniqid().'.jpg';
-            Storage::disk('public')->put($filename, $imageData);
+            Storage::disk('r2')->put($filename, $imageData);
             $photoPath = $filename;
         }
 
@@ -74,7 +74,7 @@ class MeasurementController extends Controller
             $poseImageData = preg_replace('/^data:image\/\w+;base64,/', '', $poseImageData);
             $poseImageData = base64_decode($poseImageData);
             $poseFilename = 'measurements/pose_'.uniqid().'.jpg';
-            Storage::disk('public')->put($poseFilename, $poseImageData);
+            Storage::disk('r2')->put($poseFilename, $poseImageData);
             $posePhotoPath = $poseFilename;
         }
 
@@ -116,11 +116,11 @@ class MeasurementController extends Controller
         }
 
         if ($measurement->photo_path) {
-            Storage::disk('public')->delete($measurement->photo_path);
+            Storage::disk('r2')->delete($measurement->photo_path);
         }
         
         if ($measurement->pose_photo_path) {
-            Storage::disk('public')->delete($measurement->pose_photo_path);
+            Storage::disk('r2')->delete($measurement->pose_photo_path);
         }
 
         $measurement->delete();

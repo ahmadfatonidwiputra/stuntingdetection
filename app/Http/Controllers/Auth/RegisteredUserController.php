@@ -113,7 +113,7 @@ class RegisteredUserController extends Controller
 
         $documentPath = null;
         if ($request->hasFile('document')) {
-            $documentPath = $request->file('document')->store('documents', 'public');
+            $documentPath = $request->file('document')->store('documents', 'r2');
         }
 
         PetugasProfile::create([

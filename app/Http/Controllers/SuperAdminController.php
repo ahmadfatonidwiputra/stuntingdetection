@@ -191,7 +191,7 @@ class SuperAdminController extends Controller
 
         // Delete uploaded document if exists
         if ($user->petugasProfile && $user->petugasProfile->document_path) {
-            Storage::disk('public')->delete($user->petugasProfile->document_path);
+            Storage::disk('r2')->delete($user->petugasProfile->document_path);
         }
 
         $name = $user->name;
