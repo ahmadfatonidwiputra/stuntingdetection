@@ -170,7 +170,7 @@
                 @enderror
             </div>
 
-            @if(auth()->user()->role === 'petugas' && auth()->user()->petugasProfile?->posyandu_name)
+            @if(auth()->user()->isPetugasPosyandu() && auth()->user()->petugasProfile?->posyandu_name)
             <div class="form-group">
                 <label class="form-label">Nama Posyandu/Puskesmas</label>
                 <input type="text" class="form-input" value="{{ auth()->user()->petugasProfile->posyandu_name }}" disabled>

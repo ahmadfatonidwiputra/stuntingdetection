@@ -141,7 +141,7 @@ class MeasurementController extends Controller
               ->orWhereRaw('lower(nama) like ?', ['%' . $q . '%']);
         });
 
-        if (auth()->user()->role === 'petugas') {
+        if (auth()->user()->isPetugasPosyandu()) {
             $posyanduId = auth()->user()->petugasProfile?->posyandu_id;
             if ($posyanduId) {
                 $query->where('posyandu_id', $posyanduId);
