@@ -99,7 +99,7 @@ class RegisteredUserController extends Controller
             'kecamatan' => ['nullable', 'string', 'max:100'],
             'kota' => ['nullable', 'string', 'max:100'],
             'provinsi' => ['nullable', 'string', 'max:100'],
-            'document' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
             'agreement' => ['accepted'],
         ]);
 
