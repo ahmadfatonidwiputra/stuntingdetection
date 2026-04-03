@@ -37,7 +37,7 @@ class OrangTuaRegisterController extends Controller
             'no_kk'         => 'required|digits:16',
             'hubungan'      => 'required|in:ayah,ibu,wali',
             'no_telepon'    => 'nullable|max:15',
-            'posyandu_id'   => 'required|exists:posyandus,id',
+            'posyandu_id'   => 'required|exists:posyandu,id',
             'nik_anak'      => 'required|digits:16',
             'nama_anak'     => 'required|string',
             'nama_ibu'      => 'required|string',
