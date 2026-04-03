@@ -100,6 +100,10 @@ Route::middleware(['auth', 'verified', 'active.petugas'])->group(function () {
     Route::get('/verifikasi-orang-tua', [VerifikasiOrangTuaController::class, 'index'])->name('verifikasi-orang-tua.index');
     Route::post('/verifikasi-orang-tua/{id}/approve', [VerifikasiOrangTuaController::class, 'approve'])->name('verifikasi-orang-tua.approve');
     Route::post('/verifikasi-orang-tua/{id}/reject', [VerifikasiOrangTuaController::class, 'reject'])->name('verifikasi-orang-tua.reject');
+    Route::get('/verifikasi-orang-tua/{user}/edit', [VerifikasiOrangTuaController::class, 'edit'])->name('verifikasi-orang-tua.edit');
+    Route::put('/verifikasi-orang-tua/{user}', [VerifikasiOrangTuaController::class, 'update'])->name('verifikasi-orang-tua.update');
+    Route::post('/verifikasi-orang-tua/{user}/suspend', [VerifikasiOrangTuaController::class, 'suspend'])->name('verifikasi-orang-tua.suspend');
+    Route::delete('/verifikasi-orang-tua/{user}', [VerifikasiOrangTuaController::class, 'destroy'])->name('verifikasi-orang-tua.destroy');
 });
 
 // ── Profile (all authenticated) ────────────────────

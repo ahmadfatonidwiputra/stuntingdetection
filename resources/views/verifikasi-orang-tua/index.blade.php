@@ -110,5 +110,77 @@
         </div>
         @endforeach
     @endif
+
+    <div style="margin-top: 48px; margin-bottom: 16px;">
+        <div class="page-title" style="font-size: 20px;">✅ Sudah Terverifikasi</div>
+        <div class="page-sub">Daftar orang tua yang aktif di posyandu Anda</div>
+    </div>
+
+    @if($verified->isEmpty())
+    <div class="empty-state">
+        <div style="font-size: 40px; margin-bottom: 14px;">👥</div>
+        <div style="font-size: 16px; font-weight: 600;">Belum ada orang tua terverifikasi.</div>
+    </div>
+    @else
+        @foreach($verified as $user)
+        @php $profile = $user->orangTuaProfile; @endphp
+        <div class="request-card" style="{{ $user->status === 'suspended' ? 'opacity: 0.7; filter: grayscale(50%);' : '' }}">
+            <div class="ortu-header">
+                <div class="ortu-avatar" style="{{ $user->status === 'suspended' ? 'background: #9ca3af;' : 'background: #3b82f6;' }}">👤</div>
+                <div>
+                    <div class="ortu-name">
+                        {{ $user->name }}
+                        @if($user->status === 'suspended')
+                            <span style="font-size: 11px; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 6px; vertical-align: middle;">Nonaktif</span>
+                        @endif
+                    </div>
+                    <div class="ortu-meta">{{ $user->email }} • Terverifikasi</div>
+                </div>
+            </div>
+
+            @if($profile)
+            <div class="info-row">
+                <span>NIK: <b>{{ $profile->nik }}</b></span>
+                <span>No. KK: <b>{{ $profile->no_kk }}</b></span>
+                <span>Hubungan: <b>{{ ucfirst($profile->hubungan) }}</b></span>
+                @if($profile->no_telepon)<span>Tel: <b>{{ $profile->no_telepon }}</b></span>@endif
+            </div>
+
+            @if($profile->anakRelations->count())
+            <hr class="divider">
+            <div style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px;">Anak Terhubung:</div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                @foreach($profile->anakRelations as $rel)
+                @if($rel->anak)
+                <div class="anak-linked" style="flex: 1; min-width: 200px;">
+                    <div class="anak-name">{{ $rel->anak->nama }}</div>
+                </div>
+                @endif
+                @endforeach
+            </div>
+            @endif
+            @endif
+
+            <div class="action-row" style="margin-top: 20px;">
+                <a href="{{ route('verifikasi-orang-tua.edit', $user) }}" class="btn-approve" style="background: var(--bg-main); color: var(--text); border: 1px solid var(--glass-border); text-decoration: none;">
+                    ✏️ Edit
+                </a>
+                
+                <form method="POST" action="{{ route('verifikasi-orang-tua.suspend', $user) }}">
+                    @csrf
+                    <button type="submit" class="btn-reject" style="background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); color: var(--warning);" onclick="return confirm('Yakin ingin {{ $user->status === 'suspended' ? 'mengaktifkan' : 'menonaktifkan' }} akun ini?')">
+                        {{ $user->status === 'suspended' ? '▶ Aktifkan' : '⏸ Nonaktifkan' }}
+                    </button>
+                </form>
+                
+                <form method="POST" action="{{ route('verifikasi-orang-tua.destroy', $user) }}" onsubmit="return confirm('PERINGATAN: Yakin hapus akun ini SELAMANYA?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn-reject" style="margin-left: auto;">🗑 Hapus Selamanya</button>
+                </form>
+            </div>
+        </div>
+        @endforeach
+    @endif
 </div>
 @endsection
