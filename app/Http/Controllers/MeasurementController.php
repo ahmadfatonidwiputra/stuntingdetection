@@ -129,6 +129,29 @@ class MeasurementController extends Controller
             ->with('success', 'Pengukuran berhasil dihapus!');
     }
 
+    public function searchAnak(Request $request)
+    {
+        $q = strtolower(trim($request->query('q')));
+        if (strlen($q) < 3) {
+            return response()->json([]);
+        }
+
+        $query = \App\Models\Anak::where(function($b) use ($q) {
+            $b->whereRaw('lower(nik_anak) like ?', ['%' . $q . '%'])
+              ->orWhereRaw('lower(nama) like ?', ['%' . $q . '%']);
+        });
+
+        if (auth()->user()->role === 'petugas') {
+            $posyanduId = auth()->user()->petugasProfile?->posyandu_id;
+            if ($posyanduId) {
+                $query->where('posyandu_id', $posyanduId);
+            }
+        }
+
+        $anak = $query->limit(10)->get();
+        return response()->json($anak);
+    }
+
     /**
      * Proxy image to the Python ML prediction API.
      */

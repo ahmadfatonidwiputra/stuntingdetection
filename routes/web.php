@@ -88,6 +88,7 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
 Route::middleware(['auth', 'verified', 'active.petugas'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::resource('measurements', MeasurementController::class)->except(['edit', 'update']);
+    Route::get('/measurements-search-anak', [MeasurementController::class, 'searchAnak'])->name('measurements.search-anak');
     Route::post('/measurements/predict', [MeasurementController::class, 'predict'])->name('measurements.predict');
 
     // Manajemen Anak

@@ -23,6 +23,26 @@
     </div>
 @endif
 
+@push('styles')
+<style>
+    .search-results {
+        position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+        background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 12px;
+        margin-top: 4px; max-height: 240px; overflow-y: auto; box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    }
+    .search-result-item {
+        padding: 12px 16px; cursor: pointer; transition: background 0.15s; border-bottom: 1px solid var(--glass-border);
+    }
+    .search-result-item:last-child { border-bottom: none; }
+    .search-result-item:hover { background: var(--bg-main); }
+    .autofill-box {
+        background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25);
+        border-radius: 12px; padding: 14px; margin-bottom: 16px; font-size: 13px;
+        color: var(--text-secondary); display: none;
+    }
+</style>
+@endpush
+
 <form method="POST" action="{{ route('measurements.store') }}" enctype="multipart/form-data" id="measurementForm">
     @csrf
 
@@ -110,6 +130,15 @@
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
                 Data Pengukuran
+            </div>
+
+            <div class="form-group" style="position: relative; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px dashed var(--glass-border);">
+                <label class="form-label" style="color: var(--accent-blue);">🔍 Cari Data Anak (Ketik NIK atau Nama)</label>
+                <input type="text" id="search-anak" class="form-input" placeholder="Masukkan minimal 3 karakter..." style="border-color: rgba(59, 130, 246, 0.3);">
+                <div id="search-results" class="search-results" style="display:none;"></div>
+                <div class="autofill-box" id="autofill-info" style="margin-top: 10px;">
+                    ✅ Data anak berhasil diisi otomatis.
+                </div>
             </div>
 
             <div class="form-group">
@@ -274,6 +303,77 @@ if(birthDateInput && measuredAtInput && ageDisplay) {
     birthDateInput.addEventListener('change', calculateAge);
     measuredAtInput.addEventListener('change', calculateAge);
     document.addEventListener('DOMContentLoaded', calculateAge);
+}
+
+// Anak Autocomplete
+const searchAnakInput = document.getElementById('search-anak');
+const searchAnakResults = document.getElementById('search-results');
+const autofillAnakInfo = document.getElementById('autofill-info');
+let anakSearchTimer;
+
+if (searchAnakInput) {
+    searchAnakInput.addEventListener('input', function() {
+        clearTimeout(anakSearchTimer);
+        const q = this.value.trim();
+        if (q.length < 3) { searchAnakResults.style.display = 'none'; return; }
+
+        anakSearchTimer = setTimeout(async () => {
+            try {
+                const res = await fetch(`/measurements-search-anak?q=${encodeURIComponent(q)}`);
+                const data = await res.json();
+                renderAnakResults(data, q);
+            } catch (e) { console.error(e); }
+        }, 300);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!searchAnakInput.contains(e.target) && !searchAnakResults.contains(e.target)) {
+            searchAnakResults.style.display = 'none';
+        }
+    });
+}
+
+function renderAnakResults(data, q) {
+    if (data.length === 0) {
+        searchAnakResults.innerHTML = `<div class="search-result-item" style="color: var(--text-muted)">Tidak ditemukan anak yang cocok.</div>`;
+    } else {
+        searchAnakResults.innerHTML = data.map((item, i) => `
+            <div class="search-result-item" onclick="selectAnak(${i})">
+                <div style="font-weight: 600; font-size: 14px;">${item.nama}</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                    NIK: ${item.nik_anak || '-'} • Ortu: ${item.nama_ibu || item.nama_ayah || '-'}
+                </div>
+            </div>
+        `).join('');
+        window._anakData = data;
+    }
+    searchAnakResults.style.display = 'block';
+}
+
+function selectAnak(i) {
+    const d = window._anakData[i];
+    
+    document.querySelector('input[name="child_name"]').value = d.nama || '';
+    document.querySelector('input[name="parent_name"]').value = d.nama_ibu || d.nama_ayah || '';
+    document.querySelector('textarea[name="address"]').value = d.alamat || '';
+    
+    if (d.tanggal_lahir) {
+        const dateStr = new Date(d.tanggal_lahir).toISOString().split('T')[0];
+        document.getElementById('birthDateInput').value = dateStr;
+    }
+    
+    if (d.jenis_kelamin) {
+        const rad = document.querySelector(`input[name="gender"][value="${d.jenis_kelamin}"]`);
+        if (rad) rad.checked = true;
+    }
+
+    if (typeof calculateAge === 'function') { calculateAge(); }
+
+    searchAnakResults.style.display = 'none';
+    searchAnakInput.value = '';
+    autofillAnakInfo.style.display = 'block';
+    
+    setTimeout(() => { autofillAnakInfo.style.display = 'none'; }, 5000);
 }
 
 // Camera functions
