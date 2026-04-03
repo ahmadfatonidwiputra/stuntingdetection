@@ -142,6 +142,11 @@
             </div>
 
             <div class="form-group">
+                <label class="form-label">NIK Anak</label>
+                <input type="text" name="nik_anak" id="nikAnakInput" class="form-input" value="{{ old('nik_anak') }}" placeholder="Otomatis terisi saat memilih data anak di atas" readonly style="background-color: var(--bg-color); cursor: default;">
+            </div>
+
+            <div class="form-group">
                 <label class="form-label">Nama Anak *</label>
                 <input type="text" name="child_name" class="form-input" value="{{ old('child_name') }}" placeholder="Masukkan nama anak" required>
                 @error('child_name')
@@ -150,8 +155,8 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label">Nama Orang Tua *</label>
-                <input type="text" name="parent_name" class="form-input" value="{{ old('parent_name') }}" placeholder="Masukkan nama orang tua" required>
+                <label class="form-label">Nama Ibu Kandung *</label>
+                <input type="text" name="parent_name" class="form-input" value="{{ old('parent_name') }}" placeholder="Masukkan nama ibu kandung" required>
                 @error('parent_name')
                     <p class="form-error">{{ $message }}</p>
                 @enderror
@@ -361,6 +366,9 @@ function renderAnakResults(data, q) {
 function selectAnak(i) {
     const d = window._anakData[i];
     
+    const nikAnakInput = document.getElementById('nikAnakInput');
+    if (nikAnakInput) nikAnakInput.value = d.nik_anak || '';
+
     document.querySelector('input[name="child_name"]').value = d.nama || '';
     document.querySelector('input[name="parent_name"]').value = d.nama_ibu || d.nama_ayah || '';
     document.querySelector('textarea[name="address"]').value = d.alamat || '';
