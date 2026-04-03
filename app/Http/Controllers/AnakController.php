@@ -47,6 +47,24 @@ class AnakController extends Controller
     public function create()
     {
         $user     = auth()->user();
+        
+        // Auto-fix missing posyandu_id for Petugas
+        if ($user->isPetugasPosyandu() && $user->petugasProfile && !$user->petugasProfile->posyandu_id && $user->petugasProfile->posyandu_name) {
+            $posyandu = Posyandu::firstOrCreate(
+                ['nama' => $user->petugasProfile->posyandu_name],
+                [
+                    'kota' => $user->petugasProfile->kota ?? 'Unknown',
+                    'provinsi' => $user->petugasProfile->provinsi ?? 'Unknown',
+                    'kelurahan' => $user->petugasProfile->kelurahan ?? null,
+                    'kecamatan' => $user->petugasProfile->kecamatan ?? null,
+                    'alamat' => $user->petugasProfile->posyandu_address ?? null,
+                    'status' => 'active'
+                ]
+            );
+            $user->petugasProfile->update(['posyandu_id' => $posyandu->id]);
+            $user->refresh();
+        }
+
         $defaultPosyanduId = $user->petugasProfile?->posyandu_id;
         
         if ($user->isPetugasPosyandu() && $defaultPosyanduId) {
@@ -110,6 +128,24 @@ class AnakController extends Controller
     public function edit(Anak $anak)
     {
         $user = auth()->user();
+        
+        // Auto-fix missing posyandu_id for Petugas
+        if ($user->isPetugasPosyandu() && $user->petugasProfile && !$user->petugasProfile->posyandu_id && $user->petugasProfile->posyandu_name) {
+            $posyandu = Posyandu::firstOrCreate(
+                ['nama' => $user->petugasProfile->posyandu_name],
+                [
+                    'kota' => $user->petugasProfile->kota ?? 'Unknown',
+                    'provinsi' => $user->petugasProfile->provinsi ?? 'Unknown',
+                    'kelurahan' => $user->petugasProfile->kelurahan ?? null,
+                    'kecamatan' => $user->petugasProfile->kecamatan ?? null,
+                    'alamat' => $user->petugasProfile->posyandu_address ?? null,
+                    'status' => 'active'
+                ]
+            );
+            $user->petugasProfile->update(['posyandu_id' => $posyandu->id]);
+            $user->refresh();
+        }
+
         $defaultPosyanduId = $user->petugasProfile?->posyandu_id;
         
         if ($user->isPetugasPosyandu() && $defaultPosyanduId) {

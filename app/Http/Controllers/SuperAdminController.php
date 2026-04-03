@@ -122,10 +122,29 @@ class SuperAdminController extends Controller
         $user->update(['status' => 'active']);
 
         if ($user->petugasProfile) {
-            $user->petugasProfile->update([
+            $profile = $user->petugasProfile;
+
+            // Link to Posyandu or create new
+            if (!$profile->posyandu_id && $profile->posyandu_name) {
+                $posyandu = Posyandu::firstOrCreate(
+                    ['nama' => $profile->posyandu_name],
+                    [
+                        'kota' => $profile->kota ?? 'Unknown',
+                        'provinsi' => $profile->provinsi ?? 'Unknown',
+                        'kelurahan' => $profile->kelurahan ?? null,
+                        'kecamatan' => $profile->kecamatan ?? null,
+                        'alamat' => $profile->posyandu_address ?? null,
+                        'status' => 'active'
+                    ]
+                );
+                $profile->posyandu_id = $posyandu->id;
+            }
+
+            $profile->update([
                 'verified_by' => Auth::id(),
                 'verified_at' => now(),
                 'rejection_reason' => null,
+                'posyandu_id' => $profile->posyandu_id,
             ]);
         }
 
