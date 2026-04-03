@@ -74,6 +74,7 @@
 
             {{-- Posyandu --}}
             <div class="section-label">🏥 Posyandu</div>
+            @if(auth()->user()->role === 'super_admin')
             <div class="form-group">
                 <label class="form-label">Posyandu <span style="color:var(--danger)">*</span></label>
                 <select name="posyandu_id" class="form-input" required>
@@ -86,6 +87,13 @@
                 </select>
                 @error('posyandu_id') <div class="form-error">{{ $message }}</div> @enderror
             </div>
+            @else
+            <div class="form-group">
+                <label class="form-label">Posyandu</label>
+                <input type="text" class="form-input" value="{{ auth()->user()->petugasProfile?->posyandu_name ?? '-' }}" disabled>
+                <input type="hidden" name="posyandu_id" value="{{ $defaultPosyanduId }}">
+            </div>
+            @endif
 
             {{-- Cari Orang Tua --}}
             <div class="section-label">👨‍👩‍👧 Data Orang Tua</div>
