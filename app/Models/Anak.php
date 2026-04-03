@@ -47,6 +47,14 @@ class Anak extends Model
         return $this->hasOne(Measurement::class)->latestOfMany('measured_at');
     }
 
+    public function latestPhotoMeasurement(): HasOne
+    {
+        return $this->hasOne(Measurement::class)->ofMany(
+            ['measured_at' => 'max'],
+            fn ($query) => $query->whereNotNull('photo_path')
+        );
+    }
+
     public function orangTuaRelations(): HasMany
     {
         return $this->hasMany(OrangTuaAnak::class, 'anak_id');

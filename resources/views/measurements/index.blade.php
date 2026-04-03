@@ -60,12 +60,33 @@
                     @foreach($anakList as $index => $anak)
                     @php
                         $latestMeasurement = $hasDateFilter ? $anak->measurements->first() : $anak->latestMeasurement;
+                        $photoMeasurement = $hasDateFilter
+                            ? $anak->measurements->first(fn ($measurement) => filled($measurement->photo_path))
+                            : $anak->latestPhotoMeasurement;
                     @endphp
                     <tr>
                         <td style="color: var(--text-muted);">{{ $anakList->firstItem() + $index }}</td>
                         <td>
-                            <div style="font-weight: 700;">{{ $anak->nama }}</div>
-                            <div style="font-size: 12px; color: var(--text-muted);">NIK: {{ $anak->nik_anak ?: '-' }}</div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                @if($photoMeasurement?->photo_path)
+                                    <div style="width: 52px; height: 52px; border-radius: 14px; overflow: hidden; background: var(--bg-glass); border: 1px solid var(--border-glass); flex-shrink: 0;">
+                                        <img src="{{ Storage::disk('r2')->url($photoMeasurement->photo_path) }}" alt="Foto {{ $anak->nama }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    </div>
+                                @else
+                                    <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(124, 58, 237, 0.14)); border: 1px dashed var(--border-glass); color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                                        👶
+                                    </div>
+                                @endif
+                                <div>
+                                    <div style="font-weight: 700;">{{ $anak->nama }}</div>
+                                    <div style="font-size: 12px; color: var(--text-muted);">NIK: {{ $anak->nik_anak ?: '-' }}</div>
+                                    @if($photoMeasurement?->photo_path)
+                                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                                            Foto dari pengukuran {{ $photoMeasurement->measured_at->format('d M Y') }}
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
                         </td>
                         <td>
                             <strong>{{ $anak->filtered_measurements_count }}</strong>

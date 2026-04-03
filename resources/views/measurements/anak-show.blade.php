@@ -1,6 +1,87 @@
 @extends('layouts.main')
 
+@push('styles')
+<style>
+    .growth-chart-card {
+        margin-bottom: 24px;
+    }
+
+    .growth-chart-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+    }
+
+    .growth-chart-tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .growth-chart-tab {
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--border-glass);
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .growth-chart-tab:hover {
+        color: var(--text-primary);
+        background: var(--bg-glass);
+    }
+
+    .growth-chart-tab.active {
+        background: var(--gradient-1);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
+    }
+
+    .growth-chart-meta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: var(--bg-glass);
+        color: var(--text-secondary);
+        font-size: 12px;
+        border: 1px solid var(--border-glass);
+    }
+
+    .growth-chart-wrap {
+        position: relative;
+        height: 340px;
+        width: 100%;
+    }
+
+    @media (max-width: 768px) {
+        .growth-chart-wrap {
+            height: 300px;
+        }
+    }
+</style>
+@endpush
+
 @section('content')
+@php
+    $photoMeasurement = $anak->latestPhotoMeasurement;
+    $chartPoints = $anak->measurements->map(fn ($measurement) => [
+        'label' => $measurement->measured_at->translatedFormat('d M Y'),
+        'height' => (float) $measurement->height_cm,
+        'weight' => (float) $measurement->weight_kg,
+        'zscore' => $measurement->z_score !== null ? (float) $measurement->z_score : null,
+        'status' => $measurement->stunting_category,
+    ])->values();
+@endphp
 <div class="page-header flex-between">
     <div>
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap;">
@@ -21,7 +102,7 @@
     </a>
 </div>
 
-<div class="detail-grid" style="margin-bottom: 24px;">
+    <div class="detail-grid" style="margin-bottom: 24px;">
     <div class="glass-card fade-in">
         <div class="chart-title">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2">
@@ -33,7 +114,24 @@
             Profil Anak
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 16px;">
+        <div style="display: grid; grid-template-columns: minmax(160px, 220px) 1fr; gap: 20px; margin-top: 16px; align-items: start;">
+            <div>
+                @if($photoMeasurement?->photo_path)
+                    <div style="border-radius: 18px; overflow: hidden; border: 1px solid var(--border-glass); background: var(--bg-glass); aspect-ratio: 4 / 5;">
+                        <img src="{{ Storage::disk('r2')->url($photoMeasurement->photo_path) }}" alt="Foto {{ $anak->nama }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px; text-align: center;">
+                        Foto dari pengukuran {{ $photoMeasurement->measured_at->translatedFormat('d M Y') }}
+                    </div>
+                @else
+                    <div style="border-radius: 18px; border: 1px dashed var(--border-glass); background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(124, 58, 237, 0.08)); aspect-ratio: 4 / 5; display: flex; align-items: center; justify-content: center; flex-direction: column; color: var(--text-muted);">
+                        <div style="font-size: 48px; line-height: 1;">👶</div>
+                        <div style="font-size: 12px; margin-top: 10px;">Belum ada foto pengukuran</div>
+                    </div>
+                @endif
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
             <div>
                 <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Tanggal Lahir</div>
                 <div style="font-weight: 700;">{{ $anak->tanggal_lahir?->translatedFormat('d F Y') ?: '-' }}</div>
@@ -49,6 +147,7 @@
             <div>
                 <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Posyandu</div>
                 <div style="font-weight: 700;">{{ $anak->posyandu?->nama ?: '-' }}</div>
+            </div>
             </div>
         </div>
     </div>
@@ -92,6 +191,42 @@
         @endif
     </div>
 </div>
+
+@if($anak->measurements->isNotEmpty())
+<div class="glass-card fade-in growth-chart-card">
+    <div class="growth-chart-toolbar">
+        <div>
+            <div class="chart-title" style="margin-bottom: 6px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-pink)" stroke-width="2">
+                    <path d="M3 3v18h18"></path>
+                    <path d="M19 9l-5 5-4-4-3 3"></path>
+                </svg>
+                Grafik Perkembangan
+            </div>
+            <div style="font-size: 13px; color: var(--text-muted);">
+                Pantau perubahan berat badan, tinggi badan, dan Z-Score anak dari waktu ke waktu.
+            </div>
+        </div>
+        <div class="growth-chart-meta">
+            <span>{{ $anak->measurements->count() }} titik data</span>
+            <span>•</span>
+            <span>{{ $anak->measurements->first()?->measured_at?->translatedFormat('d M Y') }}</span>
+            <span>s/d</span>
+            <span>{{ $anak->measurements->last()?->measured_at?->translatedFormat('d M Y') }}</span>
+        </div>
+    </div>
+
+    <div class="growth-chart-tabs">
+        <button type="button" class="growth-chart-tab active" data-chart-type="weight">Berat Badan</button>
+        <button type="button" class="growth-chart-tab" data-chart-type="height">Tinggi Badan</button>
+        <button type="button" class="growth-chart-tab" data-chart-type="zscore">Z-Score</button>
+    </div>
+
+    <div class="growth-chart-wrap" style="margin-top: 18px;">
+        <canvas id="growthChart"></canvas>
+    </div>
+</div>
+@endif
 
 <div class="glass-card fade-in">
     <div class="chart-title">
@@ -165,3 +300,196 @@
     @endif
 </div>
 @endsection
+
+@push('scripts')
+@if($anak->measurements->isNotEmpty())
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const growthCanvas = document.getElementById('growthChart');
+    const chartTabs = Array.from(document.querySelectorAll('.growth-chart-tab'));
+
+    if (!growthCanvas || chartTabs.length === 0 || typeof Chart === 'undefined') {
+        return;
+    }
+
+    const chartPoints = @json($chartPoints);
+
+    const getGridColor = () => document.documentElement.classList.contains('light-theme') ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.06)';
+    const getTickColor = () => document.documentElement.classList.contains('light-theme') ? '#475569' : '#94a3b8';
+    const getTooltipBg = () => document.documentElement.classList.contains('light-theme') ? 'rgba(255,255,255,0.96)' : 'rgba(15,23,42,0.92)';
+    const getTooltipTitle = () => document.documentElement.classList.contains('light-theme') ? '#0f172a' : '#f8fafc';
+    const getTooltipBody = () => document.documentElement.classList.contains('light-theme') ? '#334155' : '#cbd5e1';
+
+    const chartConfigMap = {
+        weight: {
+            label: 'Berat Badan (kg)',
+            color: '#0ea5e9',
+            fill: 'rgba(14, 165, 233, 0.12)',
+            unit: 'kg',
+            values: chartPoints.map(point => point.weight),
+        },
+        height: {
+            label: 'Tinggi Badan (cm)',
+            color: '#8b5cf6',
+            fill: 'rgba(139, 92, 246, 0.12)',
+            unit: 'cm',
+            values: chartPoints.map(point => point.height),
+        },
+        zscore: {
+            label: 'Z-Score',
+            color: '#ec4899',
+            fill: 'rgba(236, 72, 153, 0.12)',
+            unit: '',
+            values: chartPoints.map(point => point.zscore),
+        },
+    };
+
+    const labels = chartPoints.map(point => point.label);
+    const ctx = growthCanvas.getContext('2d');
+    let growthChart = null;
+    let activeType = 'weight';
+
+    function buildChart(type) {
+        const metric = chartConfigMap[type];
+
+        if (growthChart) {
+            growthChart.destroy();
+        }
+
+        const datasets = [{
+            label: metric.label,
+            data: metric.values,
+            borderColor: metric.color,
+            backgroundColor: metric.fill,
+            fill: true,
+            borderWidth: 3,
+            tension: 0.35,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: metric.color,
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            spanGaps: true,
+        }];
+
+        if (type === 'zscore') {
+            datasets.push(
+                {
+                    label: 'Batas Stunting (-2)',
+                    data: labels.map(() => -2),
+                    borderColor: 'rgba(245, 158, 11, 0.9)',
+                    borderDash: [8, 6],
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false,
+                },
+                {
+                    label: 'Batas Sangat Stunting (-3)',
+                    data: labels.map(() => -3),
+                    borderColor: 'rgba(239, 68, 68, 0.9)',
+                    borderDash: [8, 6],
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false,
+                }
+            );
+        }
+
+        growthChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets,
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                plugins: {
+                    legend: {
+                        display: type === 'zscore',
+                        labels: {
+                            color: getTickColor(),
+                            font: { family: 'Inter' },
+                            usePointStyle: true,
+                            boxWidth: 8,
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: getTooltipBg(),
+                        titleColor: getTooltipTitle(),
+                        bodyColor: getTooltipBody(),
+                        borderColor: getGridColor(),
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: function (context) {
+                                const value = context.parsed.y;
+                                if (value === null || value === undefined) {
+                                    return context.dataset.label + ': -';
+                                }
+
+                                if (type === 'zscore' && context.datasetIndex === 0) {
+                                    const point = chartPoints[context.dataIndex];
+                                    return `${context.dataset.label}: ${value.toFixed(2)} (${point.status || 'Tanpa status'})`;
+                                }
+
+                                if (type === 'zscore') {
+                                    return `${context.dataset.label}: ${value.toFixed(1)}`;
+                                }
+
+                                return `${context.dataset.label}: ${value.toFixed(1)} ${metric.unit}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: getGridColor() },
+                        ticks: { color: getTickColor(), font: { family: 'Inter' } }
+                    },
+                    y: {
+                        grid: { color: getGridColor() },
+                        ticks: {
+                            color: getTickColor(),
+                            font: { family: 'Inter' },
+                            callback: function (value) {
+                                return type === 'zscore'
+                                    ? Number(value).toFixed(1)
+                                    : `${Number(value).toFixed(1)} ${metric.unit}`;
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: metric.label,
+                            color: getTickColor(),
+                            font: { family: 'Inter', weight: '600' }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    chartTabs.forEach(tab => {
+        tab.addEventListener('click', function () {
+            const selectedType = this.dataset.chartType;
+
+            if (!selectedType || selectedType === activeType) {
+                return;
+            }
+
+            activeType = selectedType;
+            chartTabs.forEach(item => item.classList.remove('active'));
+            this.classList.add('active');
+            buildChart(activeType);
+        });
+    });
+
+    window.addEventListener('themeToggled', () => buildChart(activeType));
+
+    buildChart(activeType);
+});
+</script>
+@endif
+@endpush

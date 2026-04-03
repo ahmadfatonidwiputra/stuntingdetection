@@ -52,6 +52,28 @@ class MeasurementHistoryByChildTest extends TestCase
         $this->assertSame(1, substr_count($content, $anakA2->nama));
     }
 
+    public function test_measurement_history_shows_child_photo_from_measurement(): void
+    {
+        $posyandu = $this->createPosyandu('Posyandu Kenari');
+        $petugas = $this->createPetugas($posyandu, 'petugas-foto@example.com');
+        $anak = $this->createAnak($posyandu, $petugas, ['nama' => 'Nadia']);
+
+        $measurement = $this->createMeasurement($petugas, $anak, [
+            'photo_path' => 'measurements/nadia-latest.jpg',
+            'measured_at' => '2026-04-02 08:00:00',
+        ]);
+
+        $this->actingAs($petugas)
+            ->get(route('measurements.index'))
+            ->assertOk()
+            ->assertSee($measurement->photo_path, false);
+
+        $this->actingAs($petugas)
+            ->get(route('measurements.anak.show', $anak))
+            ->assertOk()
+            ->assertSee($measurement->photo_path, false);
+    }
+
     public function test_child_history_page_shows_all_measurements_from_same_posyandu(): void
     {
         $posyandu = $this->createPosyandu('Posyandu Mawar');
@@ -74,6 +96,8 @@ class MeasurementHistoryByChildTest extends TestCase
         $response = $this->actingAs($petugas1)->get(route('measurements.anak.show', $anak));
 
         $response->assertOk();
+        $response->assertSeeText('Grafik Perkembangan');
+        $response->assertSee('id="growthChart"', false);
         $response->assertSeeText($measurement1->measured_at->format('d M Y'));
         $response->assertSeeText($measurement2->measured_at->format('d M Y'));
         $response->assertSeeText($petugas1->petugasProfile->nama_lengkap);

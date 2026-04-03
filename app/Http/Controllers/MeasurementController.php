@@ -45,7 +45,7 @@ class MeasurementController extends Controller
                     ->latest('measured_at'),
             ]);
         } else {
-            $query->with('latestMeasurement');
+            $query->with(['latestMeasurement', 'latestPhotoMeasurement']);
         }
 
         $anakList = $query->paginate(10)->withQueryString();
@@ -147,6 +147,7 @@ class MeasurementController extends Controller
         $anak->load([
             'posyandu',
             'latestMeasurement',
+            'latestPhotoMeasurement',
             'measurements' => fn ($query) => $query
                 ->with(['anak', 'user.petugasProfile'])
                 ->orderBy('measured_at'),
