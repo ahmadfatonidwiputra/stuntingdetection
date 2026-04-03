@@ -32,6 +32,13 @@ class MeasurementController extends Controller
                 fn (Builder $query) => $query->where('posyandu_id', $posyanduId),
                 fn (Builder $query) => $query->whereRaw('1 = 0')
             )
+            ->when($request->filled('search'), function (Builder $query) use ($request) {
+                $search = strtolower($request->search);
+                $query->where(function($q) use ($search) {
+                    $q->whereRaw('lower(nama) like ?', ['%' . $search . '%'])
+                      ->orWhereRaw('lower(nik_anak) like ?', ['%' . $search . '%']);
+                });
+            })
             ->whereHas('measurements', fn ($query) => $this->applyDateFilters($query, $request))
             ->withCount([
                 'measurements as filtered_measurements_count' => fn ($query) => $this->applyDateFilters($query, $request),

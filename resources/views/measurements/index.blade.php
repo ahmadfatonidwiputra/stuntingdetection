@@ -18,6 +18,10 @@
 <!-- Filter -->
 <div class="glass-card fade-in" style="margin-bottom: 24px;">
     <form method="GET" action="{{ route('measurements.index') }}" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+        <div class="form-group" style="margin-bottom: 0; flex: 2; min-width: 200px;">
+            <label class="form-label">Cari Nama / NIK</label>
+            <input type="text" name="search" class="form-input" value="{{ request('search') }}" placeholder="Cari nama atau NIK anak...">
+        </div>
         <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
             <label class="form-label">Dari Tanggal</label>
             <input type="date" name="from" class="form-input" value="{{ request('from') }}">
@@ -34,7 +38,7 @@
                 </svg>
                 Filter
             </button>
-            @if(request('from') || request('to'))
+            @if(request('from') || request('to') || request('search'))
                 <a href="{{ route('measurements.index') }}" class="btn btn-secondary btn-sm">Reset</a>
             @endif
         </div>
