@@ -46,7 +46,24 @@
         <div class="page-title">🔍 Verifikasi Pendaftaran Orang Tua</div>
         <a href="{{ route('dashboard') }}" style="color: var(--primary); font-size: 14px; font-weight: 600; text-decoration: none;">← Dashboard</a>
     </div>
-    <div class="page-sub">{{ $pending->count() }} pendaftaran menunggu verifikasi</div>
+    <div class="page-sub">{{ $pending->count() }} pendaftaran menunggu verifikasi.</div>
+
+    <!-- Filter Pencarian -->
+    <div class="request-card" style="margin-bottom: 24px; padding: 16px 20px;">
+        <form method="GET" action="{{ route('verifikasi-orang-tua.index') }}" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+            <div style="flex: 1; min-width: 250px;">
+                <input type="text" name="search" class="form-input" value="{{ request('search') }}" placeholder="Cari nama akun, nama profil, email, atau NIK..." style="width: 100%; border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 10px; background: var(--bg-main); color: var(--text);">
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" class="btn-approve" style="padding: 10px 20px;">
+                    🔍 Cari
+                </button>
+                @if(request('search'))
+                    <a href="{{ route('verifikasi-orang-tua.index') }}" class="btn-reject" style="padding: 10px 20px; text-decoration: none; color: var(--text-secondary); background: var(--bg-main); border: 1px solid var(--glass-border);">Reset</a>
+                @endif
+            </div>
+        </form>
+    </div>
 
     @if(session('success'))
     <div class="success-alert">✅ {{ session('success') }}</div>

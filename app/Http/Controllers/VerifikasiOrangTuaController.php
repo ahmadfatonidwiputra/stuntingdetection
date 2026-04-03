@@ -12,11 +12,12 @@ use Illuminate\Support\Facades\DB;
 class VerifikasiOrangTuaController extends Controller
 {
     /**
-     * List orang tua yang menunggu verifikasi.
+     * List orang tua yang menunggu dan sudah terverifikasi.
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
+        $search = strtolower(trim($request->query('search')));
 
         $queryPending = User::orangTua()
             ->where('status', 'pending')
@@ -25,6 +26,19 @@ class VerifikasiOrangTuaController extends Controller
         $queryVerified = User::orangTua()
             ->whereIn('status', ['active', 'suspended'])
             ->with(['orangTuaProfile.anakRelations.anak.posyandu']);
+
+        if ($search) {
+            $searchClosure = function($q) use ($search) {
+                $q->whereRaw('lower(name) like ?', ['%' . $search . '%'])
+                  ->orWhereRaw('lower(email) like ?', ['%' . $search . '%'])
+                  ->orWhereHas('orangTuaProfile', function($pQ) use ($search) {
+                      $pQ->whereRaw('lower(nama_lengkap) like ?', ['%' . $search . '%'])
+                         ->orWhereRaw('lower(nik) like ?', ['%' . $search . '%']);
+                  });
+            };
+            $queryPending->where($searchClosure);
+            $queryVerified->where($searchClosure);
+        }
 
         // Petugas hanya lihat yang terhubung ke posyanduny
         if ($user->isPetugasPosyandu()) {
