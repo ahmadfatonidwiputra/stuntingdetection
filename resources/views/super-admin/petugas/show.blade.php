@@ -111,8 +111,23 @@
         @if($user->petugasProfile?->document_path)
         <div class="glass-card fade-in" style="margin-bottom: 24px;">
             <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 16px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">📄 Dokumen</h3>
+            
+            @php
+                $ext = pathinfo($user->petugasProfile->document_path, PATHINFO_EXTENSION);
+            @endphp
+            
+            @if(in_array(strtolower($ext), ['jpg', 'jpeg', 'png']))
+                <div style="width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 12px; border: 1px solid var(--border-glass);">
+                    <img src="{{ Storage::disk('r2')->url($user->petugasProfile->document_path) }}" alt="Dokumen" style="width: 100%; height: auto; display: block;">
+                </div>
+            @else
+                <div style="width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 12px; border: 1px solid var(--border-glass); height: 400px;">
+                    <iframe src="{{ Storage::disk('r2')->url($user->petugasProfile->document_path) }}" width="100%" height="100%" style="border: none;"></iframe>
+                </div>
+            @endif
+            
             <a href="{{ Storage::disk('r2')->url($user->petugasProfile->document_path) }}" target="_blank" class="btn btn-secondary" style="width: 100%; justify-content: center;">
-                Lihat Dokumen →
+                Buka di Tab Baru →
             </a>
         </div>
         @endif
