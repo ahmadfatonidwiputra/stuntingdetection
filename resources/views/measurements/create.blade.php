@@ -165,6 +165,13 @@
                 @enderror
             </div>
 
+            @if(auth()->user()->role === 'petugas' && auth()->user()->petugasProfile?->posyandu_name)
+            <div class="form-group">
+                <label class="form-label">Nama Posyandu/Puskesmas</label>
+                <input type="text" class="form-input" value="{{ auth()->user()->petugasProfile->posyandu_name }}" disabled>
+                <input type="hidden" name="posyandu_name" value="{{ auth()->user()->petugasProfile->posyandu_name }}">
+            </div>
+            @else
             <div class="form-group">
                 <label class="form-label">Nama Posyandu/Puskesmas</label>
                 <input type="text" name="posyandu_name" class="form-input" value="{{ old('posyandu_name') }}" placeholder="Masukkan nama tempat pengukuran (opsional)">
@@ -172,6 +179,7 @@
                     <p class="form-error">{{ $message }}</p>
                 @enderror
             </div>
+            @endif
 
             <div class="form-group">
                 <label class="form-label">Tanggal Lahir Anak *</label>
