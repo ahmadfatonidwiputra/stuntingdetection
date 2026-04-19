@@ -5,9 +5,18 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>{{ config('app.name', 'AI Stunt Detect') }}</title>
 
-        <!-- Fonts -->
+        <!-- Favicon -->
+        <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+
+        <!-- Open Graph / WhatsApp Meta Tags -->
+        <meta property="og:title" content="{{ config('app.name', 'AI Stunt Detect') }}" />
+        <meta property="og:description" content="AI Stunt Detect - Sistem deteksi dini stunting berbasis kecerdasan buatan" />
+        <meta property="og:image" content="{{ asset('favicon.png') }}" />
+        <meta property="og:url" content="{{ url()->current() }}" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="{{ config('app.name', 'AI Stunt Detect') }}" />        <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=poppins:400,500,600,700&display=swap" rel="stylesheet" />
 

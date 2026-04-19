@@ -7,7 +7,16 @@
 
         <title>{{ config('app.name', 'AI Stunt Detect') }} - Pengukuran Tubuh</title>
 
-        <!-- Fonts -->
+        <!-- Favicon -->
+        <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+
+        <!-- Open Graph / WhatsApp Meta Tags -->
+        <meta property="og:title" content="{{ config('app.name', 'AI Stunt Detect') }} - Pengukuran Tubuh" />
+        <meta property="og:description" content="Sistem deteksi stunting dini dengan teknologi kecerdasan buatan (AI) untuk pengukuran tubuh balita terintegrasi." />
+        <meta property="og:image" content="{{ asset('favicon.png') }}" />
+        <meta property="og:url" content="{{ url()->current() }}" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="{{ config('app.name', 'AI Stunt Detect') }}" />        <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">

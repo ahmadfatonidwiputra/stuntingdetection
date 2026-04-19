@@ -10,6 +10,16 @@
 
     <title>@yield('title', 'AI Stunt Detect - Deteksi Dini Stunting Berbasis AI')</title>
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+
+    <!-- Open Graph / WhatsApp Meta Tags -->
+    <meta property="og:title" content="AI Stunt Detect - Deteksi Dini Stunting Berbasis AI" />
+    <meta property="og:description" content="AI Stunt Detect - Sistem deteksi dini stunting berbasis AI untuk posyandu Indonesia. Pantau pertumbuhan anak dengan teknologi kecerdasan buatan." />
+    <meta property="og:image" content="{{ asset('favicon.png') }}" />
+    <meta property="og:url" content="{{ url()->current() }}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="AI Stunt Detect" />
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
