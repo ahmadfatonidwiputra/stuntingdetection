@@ -8,12 +8,12 @@
         <title>{{ config('app.name', 'AI Stunt Detect') }}</title>
 
         <!-- Favicon -->
-        <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+        <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
 
         <!-- Open Graph / WhatsApp Meta Tags -->
         <meta property="og:title" content="{{ config('app.name', 'AI Stunt Detect') }}" />
         <meta property="og:description" content="AI Stunt Detect - Sistem deteksi dini stunting berbasis kecerdasan buatan" />
-        <meta property="og:image" content="{{ asset('favicon.png') }}" />
+        <meta property="og:image" content="{{ asset('logo.png') }}" />
         <meta property="og:url" content="{{ url()->current() }}" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="{{ config('app.name', 'AI Stunt Detect') }}" />        <!-- Fonts -->
