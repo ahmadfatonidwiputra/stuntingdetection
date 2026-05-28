@@ -35,7 +35,7 @@
         </div>
 
         <p class="mt-12 text-center text-sm font-medium text-slate-500">
-            {{ now()->year }} &copy; {{ config('app.name', 'Laravel') }}
+            {{ now()->year }} &copy; {{ config('app.name', 'AI Stunt Detect') }}
         </p>
     </body>
 </html>
