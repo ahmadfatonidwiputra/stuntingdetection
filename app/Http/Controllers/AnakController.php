@@ -118,6 +118,7 @@ class AnakController extends Controller
      */
     public function show(Anak $anak)
     {
+        $this->ensureCanAccessAnak($anak);
         $anak->load(['posyandu', 'petugas', 'measurements' => fn($q) => $q->orderBy('measured_at')]);
         return view('anak.show', compact('anak'));
     }
@@ -127,6 +128,7 @@ class AnakController extends Controller
      */
     public function edit(Anak $anak)
     {
+        $this->ensureCanAccessAnak($anak);
         $user = auth()->user();
         
         // Auto-fix missing posyandu_id for Petugas
@@ -162,6 +164,7 @@ class AnakController extends Controller
      */
     public function update(Request $request, Anak $anak)
     {
+        $this->ensureCanAccessAnak($anak);
         $validated = $request->validate([
             'nik_anak'       => 'required|digits:16|unique:anak,nik_anak,' . $anak->id,
             'no_kk'          => 'required|digits:16',
@@ -197,9 +200,22 @@ class AnakController extends Controller
      */
     public function destroy(Anak $anak)
     {
+        $this->ensureCanAccessAnak($anak);
         $nama = $anak->nama;
         $anak->delete();
         return redirect()->route('anak.index')->with('success', "Data anak {$nama} berhasil dihapus.");
+    }
+
+    private function ensureCanAccessAnak(Anak $anak): void
+    {
+        $user = auth()->user();
+        if (! $user->isPetugasPosyandu()) {
+            return;
+        }
+        $posyanduId = $user->petugasProfile?->posyandu_id;
+        if (! $posyanduId || (int) $anak->posyandu_id !== (int) $posyanduId) {
+            abort(403);
+        }
     }
 
     /**

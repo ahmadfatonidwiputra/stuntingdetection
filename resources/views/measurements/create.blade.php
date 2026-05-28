@@ -342,15 +342,21 @@ if (searchAnakInput) {
     });
 }
 
+function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str ?? '');
+    return d.innerHTML;
+}
+
 function renderAnakResults(data, q) {
     if (data.length === 0) {
         searchAnakResults.innerHTML = `<div class="search-result-item" style="color: var(--text-muted)">Tidak ditemukan anak yang cocok.</div>`;
     } else {
         searchAnakResults.innerHTML = data.map((item, i) => `
             <div class="search-result-item" onclick="selectAnak(${i})">
-                <div style="font-weight: 600; font-size: 14px;">${item.nama}</div>
+                <div style="font-weight: 600; font-size: 14px;">${escHtml(item.nama)}</div>
                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-                    NIK: ${item.nik_anak || '-'} • Ortu: ${item.nama_ibu || item.nama_ayah || '-'}
+                    NIK: ${escHtml(item.nik_anak) || '-'} • Ortu: ${escHtml(item.nama_ibu) || escHtml(item.nama_ayah) || '-'}
                 </div>
             </div>
         `).join('');

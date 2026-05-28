@@ -64,6 +64,7 @@ class VerifikasiOrangTuaController extends Controller
     public function approve(int $id)
     {
         $user = User::findOrFail($id);
+        $this->ensureCanManageOrangTua($user);
 
         DB::transaction(function () use ($user) {
             $user->update(['status' => 'active']);
@@ -89,6 +90,7 @@ class VerifikasiOrangTuaController extends Controller
         $request->validate(['reason' => 'nullable|string|max:500']);
 
         $user = User::findOrFail($id);
+        $this->ensureCanManageOrangTua($user);
         $user->update(['status' => 'rejected']);
 
         return redirect()->route('verifikasi-orang-tua.index')
@@ -97,12 +99,14 @@ class VerifikasiOrangTuaController extends Controller
 
     public function edit(User $user)
     {
+        $this->ensureCanManageOrangTua($user);
         $user->load('orangTuaProfile');
         return view('verifikasi-orang-tua.edit', compact('user'));
     }
 
     public function update(Request $request, User $user)
     {
+        $this->ensureCanManageOrangTua($user);
         $request->validate([
             'nama_lengkap' => 'required|string|max:200',
             'nik'          => 'required|digits:16|unique:orang_tua_profile,nik,'.$user->orangTuaProfile?->id,
@@ -121,6 +125,7 @@ class VerifikasiOrangTuaController extends Controller
 
     public function suspend(User $user)
     {
+        $this->ensureCanManageOrangTua($user);
         $newStatus = $user->status === 'suspended' ? 'active' : 'suspended';
         $user->update(['status' => $newStatus]);
         $statusText = $newStatus === 'active' ? 'diaktifkan kembali' : 'dinonaktifkan';
@@ -130,6 +135,7 @@ class VerifikasiOrangTuaController extends Controller
 
     public function destroy(User $user)
     {
+        $this->ensureCanManageOrangTua($user);
         DB::transaction(function () use ($user) {
             if ($user->orangTuaProfile) {
                 // Hapus kaitan orang tua dan anak
@@ -140,5 +146,22 @@ class VerifikasiOrangTuaController extends Controller
         });
 
         return redirect()->route('verifikasi-orang-tua.index')->with('success', 'Akun orang tua berhasil dihapus permanen.');
+    }
+
+    private function ensureCanManageOrangTua(User $orangTua): void
+    {
+        $user = auth()->user();
+        if (! $user->isPetugasPosyandu()) {
+            return;
+        }
+        $posyanduId = $user->petugasProfile?->posyandu_id;
+        if (! $posyanduId || ! $orangTua->orangTuaProfile) {
+            abort(403);
+        }
+        $linked = $orangTua->orangTuaProfile
+            ->anakRelations()
+            ->whereHas('anak', fn($q) => $q->where('posyandu_id', $posyanduId))
+            ->exists();
+        abort_unless($linked, 403);
     }
 }
