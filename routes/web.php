@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\OrangTuaRegisterController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\MeasurementController;
 use App\Http\Controllers\OrangTuaDashboardController;
 use App\Http\Controllers\ProfileController;
@@ -95,6 +96,11 @@ Route::middleware(['auth', 'verified', 'active.petugas'])->group(function () {
     // Manajemen Anak
     Route::resource('anak', AnakController::class);
     Route::get('/anak-search-orang-tua', [AnakController::class, 'searchOrangTua'])->name('anak.search-orang-tua');
+
+    // Laporan Pengukuran
+    Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
+    Route::get('/laporan/download/bulanan', [LaporanController::class, 'downloadBulanan'])->name('laporan.download.bulanan');
+    Route::get('/laporan/download/tahunan', [LaporanController::class, 'downloadTahunan'])->name('laporan.download.tahunan');
 
     // Verifikasi Orang Tua
     Route::get('/verifikasi-orang-tua', [VerifikasiOrangTuaController::class, 'index'])->name('verifikasi-orang-tua.index');
