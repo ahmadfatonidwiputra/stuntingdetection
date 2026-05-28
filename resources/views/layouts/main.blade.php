@@ -1002,7 +1002,15 @@
                             Manajemen Petugas
                         </a>
 
-                    @else
+                        <a href="{{ route('super-admin.posyandu.index') }}" class="nav-link {{ request()->routeIs('super-admin.posyandu.*') ? 'active' : '' }}">
+                            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
+                            Manajemen Posyandu
+                        </a>
+
+                    @elseif(Auth::user()->isPetugasPosyandu())
                         {{-- Petugas Posyandu Navigation --}}
                         <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1059,6 +1067,18 @@
                                 <line x1="12" y1="15" x2="12" y2="3"/>
                             </svg>
                             Download Laporan
+                        </a>
+
+                    @else
+                        {{-- Orang Tua Navigation --}}
+                        <a href="{{ route('orang-tua.dashboard') }}" class="nav-link {{ request()->routeIs('orang-tua.dashboard') ? 'active' : '' }}">
+                            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                                <rect x="3" y="14" width="7" height="7" rx="1"/>
+                                <rect x="14" y="14" width="7" height="7" rx="1"/>
+                            </svg>
+                            Dashboard
                         </a>
                     @endif
 
