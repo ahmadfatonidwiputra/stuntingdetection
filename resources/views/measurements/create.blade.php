@@ -264,7 +264,15 @@
 <script>
 let stream = null;
 const PREDICT_URL = '{{ route("measurements.predict") }}';
+const WARMUP_URL = '{{ route("measurements.warmup") }}';
 const CSRF_TOKEN = '{{ csrf_token() }}';
+
+// Nudge the ML API awake as soon as this page loads, so it's hopefully
+// no longer cold-starting by the time the user submits a photo.
+fetch(WARMUP_URL, {
+    method: 'POST',
+    headers: { 'X-CSRF-TOKEN': CSRF_TOKEN },
+}).catch(() => {});
 
 // Hitung usia
 const birthDateInput = document.getElementById('birthDateInput');
@@ -464,10 +472,12 @@ function handlePhotoUpload(event) {
     sendToMLApi(file);
 }
 
-async function sendToMLApi(imageBlob) {
+async function sendToMLApi(imageBlob, isRetry = false) {
     const loading = document.getElementById('loadingOverlay');
     loading.style.display = 'flex';
-    document.querySelector('#loadingOverlay .loading-text').textContent = 'Menganalisis dengan ML model...';
+    document.querySelector('#loadingOverlay .loading-text').textContent = isRetry
+        ? 'Model AI baru saja bangun, mencoba lagi...'
+        : 'Menganalisis dengan ML model...';
 
     try {
         const formData = new FormData();
@@ -484,6 +494,10 @@ async function sendToMLApi(imageBlob) {
         });
 
         if (!response.ok) {
+            // First failure is often a cold-start on the ML API side; retry once automatically.
+            if (!isRetry) {
+                return sendToMLApi(imageBlob, true);
+            }
             const errData = await response.json().catch(() => ({}));
             throw new Error(errData.error || 'Server error ' + response.status);
         }

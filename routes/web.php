@@ -92,6 +92,7 @@ Route::middleware(['auth', 'verified', 'active.petugas'])->group(function () {
     Route::resource('measurements', MeasurementController::class)->except(['edit', 'update']);
     Route::get('/measurements-search-anak', [MeasurementController::class, 'searchAnak'])->name('measurements.search-anak');
     Route::post('/measurements/predict', [MeasurementController::class, 'predict'])->name('measurements.predict');
+    Route::post('/measurements/warmup', [MeasurementController::class, 'warmup'])->name('measurements.warmup');
 
     // Manajemen Anak
     Route::resource('anak', AnakController::class);

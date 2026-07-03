@@ -271,9 +271,10 @@ class MeasurementController extends Controller
                 CURLOPT_POSTFIELDS => ['file' => $cfile],
                 CURLOPT_HTTPHEADER => $headers,
                 CURLOPT_RETURNTRANSFER => true,
-                // HF Spaces can take a while to wake up from a cold start.
-                CURLOPT_TIMEOUT => 120,
-                CURLOPT_CONNECTTIMEOUT => 15,
+                // Must stay under Heroku's hard 30s router timeout so Laravel
+                // can still return a clean JSON error instead of Heroku's H12 page.
+                CURLOPT_TIMEOUT => 25,
+                CURLOPT_CONNECTTIMEOUT => 10,
             ]);
 
             $response = curl_exec($ch);
@@ -282,9 +283,12 @@ class MeasurementController extends Controller
             curl_close($ch);
 
             if ($response === false || $httpCode !== 200) {
-                return response()->json([
-                    'error' => 'Prediction API tidak tersedia (HTTP ' . $httpCode . '). ' . $error,
-                ], 502);
+                $isTimeout = str_contains($error, 'timed out') || str_contains($error, 'timeout');
+                $message = $isTimeout
+                    ? 'Model AI sedang "bangun" dari mode tidur (cold start), butuh waktu lebih lama. Silakan coba lagi dalam beberapa detik.'
+                    : 'Prediction API tidak tersedia (HTTP ' . $httpCode . '). ' . $error;
+
+                return response()->json(['error' => $message], 502);
             }
 
             $data = json_decode($response, true);
@@ -302,6 +306,36 @@ class MeasurementController extends Controller
                 'error' => 'Gagal menghubungi Prediction API: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Fire-and-forget ping to nudge the HF Space awake from a cold start
+     * before the user actually submits a photo for prediction.
+     */
+    public function warmup()
+    {
+        $baseUrl = rtrim((string) config('services.stunting.url'), '/');
+        if (! $baseUrl) {
+            return response()->json(['status' => 'unconfigured']);
+        }
+
+        $token = config('services.stunting.token');
+        $headers = ['Accept: application/json'];
+        if ($token) {
+            $headers[] = 'Authorization: Bearer ' . $token;
+        }
+
+        $ch = curl_init($baseUrl . '/health');
+        curl_setopt_array($ch, [
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 5,
+            CURLOPT_CONNECTTIMEOUT => 5,
+        ]);
+        curl_exec($ch);
+        curl_close($ch);
+
+        return response()->json(['status' => 'pinged']);
     }
 
     private function applyDateFilters(Builder $query, Request $request): Builder
