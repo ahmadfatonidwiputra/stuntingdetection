@@ -460,16 +460,42 @@ function handlePhotoUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        document.getElementById('capturedPhoto').src = e.target.result;
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = function() {
+        URL.revokeObjectURL(objectUrl);
+
+        // Downscale gallery photos to the same size as camera captures.
+        // Full-resolution phone photos (several MB) were slow enough on the
+        // ML API to trip Heroku's 30s request timeout (503).
+        const MAX_DIM = 1280;
+        let { width, height } = img;
+        if (width > MAX_DIM || height > MAX_DIM) {
+            const scale = MAX_DIM / Math.max(width, height);
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        document.getElementById('capturedPhoto').src = dataUrl;
         document.getElementById('capturedPhoto').style.display = 'block';
         document.getElementById('cameraVideo').style.display = 'none';
-    };
-    reader.readAsDataURL(file);
+        document.getElementById('photoBase64').value = dataUrl;
 
-    // Send the file directly to ML API
-    sendToMLApi(file);
+        canvas.toBlob(blob => {
+            sendToMLApi(blob);
+        }, 'image/jpeg', 0.8);
+    };
+    img.onerror = function() {
+        URL.revokeObjectURL(objectUrl);
+        alert('Gagal membaca foto. Silakan pilih file gambar lain.');
+    };
+    img.src = objectUrl;
 }
 
 async function sendToMLApi(imageBlob, isRetry = false) {
