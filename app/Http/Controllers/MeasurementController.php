@@ -292,8 +292,8 @@ class MeasurementController extends Controller
             }
 
             $data = json_decode($response, true);
-            $heightCm = $data['height_cm'] ?? null;
-            $weightKg = $data['weight_kg'] ?? null;
+            $heightCm = isset($data['height_cm']) ? round($data['height_cm'], 2) : null;
+            $weightKg = isset($data['weight_kg']) ? round($data['weight_kg'], 2) : null;
 
             return response()->json([
                 'height_cm' => $heightCm,

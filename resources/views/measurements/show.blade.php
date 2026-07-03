@@ -74,11 +74,11 @@
         <div class="detail-info">
             <div class="measurement-result" style="margin-top: 0;">
                 <div class="result-card">
-                    <div class="result-value">{{ number_format($measurement->height_cm, 1) }}</div>
+                    <div class="result-value">{{ number_format($measurement->height_cm, 2) }}</div>
                     <div class="result-unit">Tinggi (cm)</div>
                 </div>
                 <div class="result-card">
-                    <div class="result-value" style="background: var(--gradient-2); -webkit-background-clip: text; background-clip: text;">{{ number_format($measurement->weight_kg, 1) }}</div>
+                    <div class="result-value" style="background: var(--gradient-2); -webkit-background-clip: text; background-clip: text;">{{ number_format($measurement->weight_kg, 2) }}</div>
                     <div class="result-unit">Berat (kg)</div>
                 </div>
             </div>

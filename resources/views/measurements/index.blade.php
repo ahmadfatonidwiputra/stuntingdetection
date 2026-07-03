@@ -100,7 +100,7 @@
                             @if($latestMeasurement)
                                 <div>{{ $latestMeasurement->measured_at->format('d M Y') }}</div>
                                 <div style="font-size: 11px; color: var(--text-muted);">
-                                    TB {{ number_format($latestMeasurement->height_cm, 1) }} cm • BB {{ number_format($latestMeasurement->weight_kg, 1) }} kg
+                                    TB {{ number_format($latestMeasurement->height_cm, 2) }} cm • BB {{ number_format($latestMeasurement->weight_kg, 2) }} kg
                                 </div>
                             @else
                                 <span style="color: var(--text-muted); font-size: 12px;">-</span>

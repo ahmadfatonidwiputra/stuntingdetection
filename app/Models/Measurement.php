@@ -28,8 +28,8 @@ class Measurement extends Model
 
     protected $casts = [
         'birth_date' => 'date',
-        'height_cm' => 'decimal:1',
-        'weight_kg' => 'decimal:1',
+        'height_cm' => 'decimal:2',
+        'weight_kg' => 'decimal:2',
         'z_score' => 'decimal:2',
         'measured_at' => 'datetime',
     ];

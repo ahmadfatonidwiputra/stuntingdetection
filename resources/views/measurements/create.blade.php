@@ -207,7 +207,7 @@
 
             <div class="form-group">
                 <label class="form-label">Tinggi Badan (cm) *</label>
-                <input type="number" name="height_cm" id="heightInput" class="form-input" step="0.1" min="30" max="300"
+                <input type="number" name="height_cm" id="heightInput" class="form-input" step="0.01" min="30" max="300"
                        value="{{ old('height_cm') }}" placeholder="Masukkan tinggi badan atau gunakan estimasi" required>
                 <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Hasil estimasi ML akan otomatis mengisi field ini</p>
                 @error('height_cm')
@@ -217,7 +217,7 @@
 
             <div class="form-group">
                 <label class="form-label">Berat Badan (kg) *</label>
-                <input type="number" name="weight_kg" id="weightInput" class="form-input" step="0.1" min="1" max="500"
+                <input type="number" name="weight_kg" id="weightInput" class="form-input" step="0.01" min="1" max="500"
                        value="{{ old('weight_kg') }}" placeholder="Masukkan berat badan atau gunakan estimasi" required>
                 <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Hasil estimasi ML akan otomatis mengisi field ini</p>
                 @error('weight_kg')
