@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'stunting' => [
+        'url' => env('STUNTING_API_URL'),
+        'token' => env('STUNTING_API_TOKEN'),
+    ],
+
 ];

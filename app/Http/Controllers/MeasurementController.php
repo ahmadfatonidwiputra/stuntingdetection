@@ -234,7 +234,7 @@ class MeasurementController extends Controller
     }
 
     /**
-     * Proxy image to the Python ML prediction API.
+     * Proxy image to the ML prediction API (Hugging Face Space).
      */
     public function predict(Request $request)
     {
@@ -244,20 +244,36 @@ class MeasurementController extends Controller
 
         $file = $request->file('image');
 
+        $baseUrl = rtrim((string) config('services.stunting.url'), '/');
+        $token = config('services.stunting.token');
+
+        if (! $baseUrl) {
+            return response()->json([
+                'error' => 'Prediction API belum dikonfigurasi. Set STUNTING_API_URL di .env.',
+            ], 500);
+        }
+
         try {
-            $ch = curl_init('http://localhost:5001/predict');
+            $ch = curl_init($baseUrl . '/predict');
             $cfile = new \CURLFile(
                 $file->getPathname(),
                 $file->getMimeType(),
                 $file->getClientOriginalName()
             );
 
+            $headers = ['Accept: application/json'];
+            if ($token) {
+                $headers[] = 'Authorization: Bearer ' . $token;
+            }
+
             curl_setopt_array($ch, [
                 CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => ['image' => $cfile],
+                CURLOPT_POSTFIELDS => ['file' => $cfile],
+                CURLOPT_HTTPHEADER => $headers,
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 60,
-                CURLOPT_CONNECTTIMEOUT => 10,
+                // HF Spaces can take a while to wake up from a cold start.
+                CURLOPT_TIMEOUT => 120,
+                CURLOPT_CONNECTTIMEOUT => 15,
             ]);
 
             $response = curl_exec($ch);
@@ -267,11 +283,20 @@ class MeasurementController extends Controller
 
             if ($response === false || $httpCode !== 200) {
                 return response()->json([
-                    'error' => 'Prediction API tidak tersedia. Pastikan server Python sedang berjalan. ' . $error,
+                    'error' => 'Prediction API tidak tersedia (HTTP ' . $httpCode . '). ' . $error,
                 ], 502);
             }
 
-            return response()->json(json_decode($response, true));
+            $data = json_decode($response, true);
+            $heightCm = $data['height_cm'] ?? null;
+            $weightKg = $data['weight_kg'] ?? null;
+
+            return response()->json([
+                'height_cm' => $heightCm,
+                'weight_kg' => $weightKg,
+                'height_error' => $heightCm === null ? ($data['message'] ?? 'Tinggi badan tidak dapat diprediksi.') : null,
+                'weight_error' => $weightKg === null ? ($data['message'] ?? 'Berat badan tidak dapat diprediksi.') : null,
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Gagal menghubungi Prediction API: ' . $e->getMessage(),

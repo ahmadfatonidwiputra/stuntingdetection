@@ -518,7 +518,7 @@ async function sendToMLApi(imageBlob) {
         document.getElementById('estimationResult').style.display = 'flex';
     } catch (err) {
         console.error('ML API error:', err);
-        alert('Error saat prediksi ML: ' + err.message + '\n\nPastikan server Python (predict_api.py) sedang berjalan.\nSilakan masukkan tinggi & berat badan secara manual.');
+        alert('Error saat prediksi ML: ' + err.message + '\n\nLayanan prediksi mungkin sedang tidak tersedia.\nSilakan masukkan tinggi & berat badan secara manual.');
     } finally {
         loading.style.display = 'none';
     }
