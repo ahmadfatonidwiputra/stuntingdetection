@@ -100,7 +100,7 @@
 
             <div style="margin-top: 16px;">
                 <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Atau upload foto:</p>
-                <input type="file" name="photo" accept="image/*" class="form-input" id="photoUpload" onchange="handlePhotoUpload(event)">
+                <input type="file" accept="image/*" class="form-input" id="photoUpload" onchange="handlePhotoUpload(event)">
             </div>
 
             <input type="hidden" name="photo_base64" id="photoBase64">
