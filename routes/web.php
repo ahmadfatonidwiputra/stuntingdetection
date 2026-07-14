@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [LandingController::class, 'home'])->name('home');
 Route::get('/tentang-stunting', [LandingController::class, 'tentangStunting'])->name('tentang-stunting');
 Route::get('/layanan', [LandingController::class, 'layanan'])->name('layanan');
+Route::get('/kalkulator-antropometri', [LandingController::class, 'kalkulatorAntropometri'])->name('kalkulator-antropometri');
 
 // ── Petugas Registration (public) ──────────────────
 Route::middleware('guest')->group(function () {

@@ -586,6 +586,8 @@
                     </li>
                     <li><a href="{{ route('layanan') }}"
                             class="{{ request()->routeIs('layanan') ? 'active' : '' }}">Layanan</a></li>
+                    <li><a href="{{ route('kalkulator-antropometri') }}"
+                            class="{{ request()->routeIs('kalkulator-antropometri') ? 'active' : '' }}">Kalkulator Antropometri</a></li>
                     @auth
                         @if(auth()->user()->isSuperAdmin())
                             <li><a href="{{ route('super-admin.dashboard') }}" class="nav-btn">Dashboard</a></li>
@@ -623,6 +625,7 @@
             <a href="{{ route('home') }}">Beranda</a>
             <a href="{{ route('tentang-stunting') }}">Tentang Stunting</a>
             <a href="{{ route('layanan') }}">Layanan</a>
+            <a href="{{ route('kalkulator-antropometri') }}">Kalkulator Antropometri</a>
             @auth
                 @if(auth()->user()->isSuperAdmin())
                     <a href="{{ route('super-admin.dashboard') }}">Dashboard</a>
@@ -671,6 +674,7 @@
                     <a href="{{ route('home') }}">Beranda</a>
                     <a href="{{ route('tentang-stunting') }}">Tentang Stunting</a>
                     <a href="{{ route('layanan') }}">Layanan Posyandu</a>
+                    <a href="{{ route('kalkulator-antropometri') }}">Kalkulator Antropometri</a>
                 </div>
                 <div class="footer-links">
                     <h4>Akses</h4>
