@@ -83,6 +83,11 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
         Route::get('/posyandu/{posyandu}/edit', [SuperAdminController::class, 'posyanduEdit'])->name('posyandu.edit');
         Route::put('/posyandu/{posyandu}', [SuperAdminController::class, 'posyanduUpdate'])->name('posyandu.update');
         Route::delete('/posyandu/{posyandu}', [SuperAdminController::class, 'posyanduDestroy'])->name('posyandu.destroy');
+
+        // Manajemen Laporan
+        Route::get('/laporan', [SuperAdminController::class, 'laporanIndex'])->name('laporan.index');
+        Route::get('/laporan/{posyandu}', [SuperAdminController::class, 'laporanShow'])->name('laporan.show');
+        Route::get('/laporan/{posyandu}/download', [SuperAdminController::class, 'laporanDownload'])->name('laporan.download');
     });
 
 // ── Petugas Dashboard & Measurements ───────────────

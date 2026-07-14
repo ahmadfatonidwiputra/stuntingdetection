@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ExportsMeasurementsCsv;
 use App\Models\Measurement;
 use App\Models\PetugasProfile;
 use App\Models\Posyandu;
@@ -9,9 +10,12 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SuperAdminController extends Controller
 {
+    use ExportsMeasurementsCsv;
+
     public function dashboard()
     {
         $totalPetugas = User::petugas()->count();
@@ -284,6 +288,79 @@ class SuperAdminController extends Controller
         $posyandu->delete();
         return redirect()->route('super-admin.posyandu.index')
             ->with('success', "Posyandu {$nama} berhasil dihapus.");
+    }
+
+    // ── Manajemen Laporan ──────────────────────────────
+
+    public function laporanIndex(Request $request)
+    {
+        $search = $request->get('search');
+
+        $posyanduList = Posyandu::query()
+            ->when($search, fn ($q) => $q->where('nama', 'like', "%{$search}%"))
+            ->withCount(['anak', 'measurements'])
+            ->orderBy('nama')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('super-admin.laporan.index', compact('posyanduList', 'search'));
+    }
+
+    public function laporanShow(Request $request, Posyandu $posyandu)
+    {
+        $request->validate([
+            'dari'   => 'nullable|date',
+            'sampai' => 'nullable|date|after_or_equal:dari',
+        ]);
+
+        $dari = $request->get('dari');
+        $sampai = $request->get('sampai');
+
+        $filtered = fn () => $posyandu->measurements()
+            ->when($dari, fn ($q) => $q->whereDate('measured_at', '>=', $dari))
+            ->when($sampai, fn ($q) => $q->whereDate('measured_at', '<=', $sampai));
+
+        $measurements = $filtered()->with('anak')->latest('measured_at')->paginate(20)->withQueryString();
+
+        $summary = [
+            'total'           => $filtered()->count(),
+            'normal'          => $filtered()->where('stunting_category', 'Normal')->count(),
+            'stunting'        => $filtered()->where('stunting_category', 'Stunting')->count(),
+            'sangat_stunting' => $filtered()->where('stunting_category', 'Sangat Stunting')->count(),
+        ];
+
+        return view('super-admin.laporan.show', compact('posyandu', 'measurements', 'summary', 'dari', 'sampai'));
+    }
+
+    public function laporanDownload(Request $request, Posyandu $posyandu): StreamedResponse|\Illuminate\Http\RedirectResponse
+    {
+        $dari = $request->get('dari');
+        $sampai = $request->get('sampai');
+
+        if (! $dari || ! $sampai) {
+            return back()->with('error', 'Pilih rentang tanggal (dari dan sampai) terlebih dahulu sebelum mengunduh.');
+        }
+
+        $validator = validator($request->all(), [
+            'dari'   => 'date',
+            'sampai' => 'date|after_or_equal:dari',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->with('error', 'Rentang tanggal tidak valid. Pastikan tanggal akhir setelah tanggal mulai.');
+        }
+
+        $measurements = $posyandu->measurements()
+            ->with('anak')
+            ->whereDate('measured_at', '>=', $dari)
+            ->whereDate('measured_at', '<=', $sampai)
+            ->orderBy('measured_at')
+            ->get();
+
+        $filename = 'laporan_' . str($posyandu->nama)->slug() . "_{$dari}_sampai_{$sampai}.csv";
+        $periodLabel = \Carbon\Carbon::parse($dari)->format('d/m/Y') . ' s/d ' . \Carbon\Carbon::parse($sampai)->format('d/m/Y');
+
+        return $this->streamMeasurementsCsv($measurements, $filename, $posyandu->nama, $periodLabel);
     }
 }
 

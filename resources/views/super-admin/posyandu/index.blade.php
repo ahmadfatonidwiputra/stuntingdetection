@@ -43,9 +43,8 @@
         <a href="{{ route('super-admin.posyandu.create') }}" class="btn-primary">+ Tambah Posyandu</a>
     </div>
 
-    @if(session('success'))
-    <div class="success-alert">✅ {{ session('success') }}</div>
-    @endif
+    @include('partials.toast')
+    @include('partials.confirm-modal')
 
     @forelse($posyandu as $p)
     <div class="posyandu-card">
@@ -74,7 +73,7 @@
             </span>
             <div style="display: flex; gap: 6px;">
                 <a href="{{ route('super-admin.posyandu.edit', $p) }}" class="action-btn">✏️ Edit</a>
-                <form method="POST" action="{{ route('super-admin.posyandu.destroy', $p) }}" onsubmit="return confirm('Hapus {{ $p->nama }}?')">
+                <form method="POST" action="{{ route('super-admin.posyandu.destroy', $p) }}" data-confirm="Hapus posyandu {{ $p->nama }}? Tindakan ini tidak dapat dibatalkan.">
                     @csrf @method('DELETE')
                     <button type="submit" class="action-btn danger" style="border: none; cursor: pointer; font-family: inherit;">🗑 Hapus</button>
                 </form>

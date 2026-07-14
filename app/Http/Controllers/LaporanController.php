@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ExportsMeasurementsCsv;
 use App\Models\Measurement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -9,6 +10,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LaporanController extends Controller
 {
+    use ExportsMeasurementsCsv;
+
     public function index()
     {
         $user = Auth::user();
@@ -53,7 +56,7 @@ class LaporanController extends Controller
             ?? 'Posyandu';
         $filename = "laporan_pengukuran_{$namaBulan}_{$tahun}.csv";
 
-        return $this->streamCsv($measurements, $filename, $posyanduName, "Laporan Bulan {$namaBulan} {$tahun}");
+        return $this->streamMeasurementsCsv($measurements, $filename, $posyanduName, "Laporan Bulan {$namaBulan} {$tahun}");
     }
 
     public function downloadTahunan(Request $request): StreamedResponse
@@ -83,7 +86,7 @@ class LaporanController extends Controller
             ?? 'Posyandu';
         $filename = "laporan_pengukuran_tahun_{$tahun}.csv";
 
-        return $this->streamCsv($measurements, $filename, $posyanduName, "Laporan Tahun {$tahun}");
+        return $this->streamMeasurementsCsv($measurements, $filename, $posyanduName, "Laporan Tahun {$tahun}");
     }
 
     private function namaBulan(int $bulan): string
@@ -96,79 +99,4 @@ class LaporanController extends Controller
         ][$bulan] ?? 'Bulan';
     }
 
-    private function streamCsv($measurements, string $filename, string $posyanduName, string $periodLabel): StreamedResponse
-    {
-        return response()->streamDownload(function () use ($measurements, $posyanduName, $periodLabel) {
-            $output = fopen('php://output', 'w');
-
-            // BOM for Excel UTF-8
-            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
-
-            // Header info
-            fputcsv($output, ["Laporan Pengukuran Posyandu"]);
-            fputcsv($output, ["Posyandu", $posyanduName]);
-            fputcsv($output, ["Periode", $periodLabel]);
-            fputcsv($output, ["Dicetak pada", now()->format('d/m/Y H:i')]);
-            fputcsv($output, ["Total Data", $measurements->count() . " pengukuran"]);
-            fputcsv($output, []);
-
-            // Column headers
-            fputcsv($output, [
-                'No',
-                'Tanggal Pengukuran',
-                'Nama Anak',
-                'NIK Anak',
-                'Tanggal Lahir',
-                'Jenis Kelamin',
-                'Nama Ibu',
-                'Nama Ayah',
-                'Usia (Bulan)',
-                'Tinggi Badan (cm)',
-                'Berat Badan (kg)',
-                'Z-Score',
-                'Kategori Stunting',
-                'Catatan',
-            ]);
-
-            foreach ($measurements as $i => $m) {
-                $anak = $m->anak;
-                $ageMonths = $anak && $anak->tanggal_lahir
-                    ? (int) $anak->tanggal_lahir->diffInMonths($m->measured_at)
-                    : '-';
-
-                fputcsv($output, [
-                    $i + 1,
-                    $m->measured_at->format('d/m/Y'),
-                    $anak?->nama ?? $m->child_name ?? '-',
-                    $anak?->nik_anak ?? '-',
-                    $anak?->tanggal_lahir?->format('d/m/Y') ?? '-',
-                    $anak?->jenis_kelamin === 'L' ? 'Laki-laki' : ($anak?->jenis_kelamin === 'P' ? 'Perempuan' : '-'),
-                    $anak?->nama_ibu ?? '-',
-                    $anak?->nama_ayah ?? '-',
-                    $ageMonths,
-                    number_format((float) $m->height_cm, 1),
-                    number_format((float) $m->weight_kg, 1),
-                    number_format((float) $m->z_score, 2),
-                    $m->stunting_category,
-                    $m->notes ?? '',
-                ]);
-            }
-
-            // Summary
-            if ($measurements->count() > 0) {
-                fputcsv($output, []);
-                fputcsv($output, ['--- Ringkasan ---']);
-                $normal = $measurements->where('stunting_category', 'Normal')->count();
-                $stunting = $measurements->where('stunting_category', 'Stunting')->count();
-                $sangatStunting = $measurements->where('stunting_category', 'Sangat Stunting')->count();
-                fputcsv($output, ['Normal', $normal]);
-                fputcsv($output, ['Stunting', $stunting]);
-                fputcsv($output, ['Sangat Stunting', $sangatStunting]);
-            }
-
-            fclose($output);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-        ]);
-    }
 }

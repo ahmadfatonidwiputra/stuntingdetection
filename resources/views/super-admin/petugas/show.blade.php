@@ -156,7 +156,7 @@
                 @endif
 
                 @if($user->status === 'active')
-                    <form method="POST" action="{{ route('super-admin.petugas.suspend', $user) }}" onsubmit="return confirm('Yakin ingin men-suspend akun ini?')">
+                    <form method="POST" action="{{ route('super-admin.petugas.suspend', $user) }}" data-confirm="Yakin ingin men-suspend akun {{ $user->name }}?">
                         @csrf
                         <button type="submit" class="btn btn-sm" style="width: 100%; justify-content: center; background: rgba(245,158,11,0.15); color: var(--accent-orange); border: 1px solid rgba(245,158,11,0.3);">⛔ Suspend Akun</button>
                     </form>
@@ -169,7 +169,7 @@
                     </form>
                 @endif
 
-                <form method="POST" action="{{ route('super-admin.petugas.destroy', $user) }}" onsubmit="return confirm('PERINGATAN: Aksi ini akan menghapus akun petugas beserta seluruh data terkait. Lanjutkan?')">
+                <form method="POST" action="{{ route('super-admin.petugas.destroy', $user) }}" data-confirm="PERINGATAN: Aksi ini akan menghapus akun petugas {{ $user->name }} beserta seluruh data terkait. Tindakan ini tidak dapat dibatalkan.">
                     @csrf @method('DELETE')
                     <button type="submit" class="btn btn-danger btn-sm" style="width: 100%; justify-content: center;">🗑️ Hapus Akun</button>
                 </form>

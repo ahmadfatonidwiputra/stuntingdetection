@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Posyandu extends Model
@@ -33,6 +34,11 @@ class Posyandu extends Model
     public function anak(): HasMany
     {
         return $this->hasMany(Anak::class);
+    }
+
+    public function measurements(): HasManyThrough
+    {
+        return $this->hasManyThrough(Measurement::class, Anak::class);
     }
 
     // ── Scopes ────────────────────────────────────────
