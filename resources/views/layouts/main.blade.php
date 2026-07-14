@@ -1021,6 +1021,14 @@
                             Manajemen Laporan
                         </a>
 
+                        <a href="{{ route('super-admin.antropometri.index') }}" class="nav-link {{ request()->routeIs('super-admin.antropometri.*') ? 'active' : '' }}">
+                            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 3v18h18"/>
+                                <path d="M18.7 8l-5.1 5.1-2.8-2.8L7 14"/>
+                            </svg>
+                            Antropometri Anak
+                        </a>
+
                     @elseif(Auth::user()->isPetugasPosyandu())
                         {{-- Petugas Posyandu Navigation --}}
                         <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
@@ -1080,6 +1088,14 @@
                             Download Laporan
                         </a>
 
+                        <a href="{{ route('antropometri.index') }}" class="nav-link {{ request()->routeIs('antropometri.*') ? 'active' : '' }}">
+                            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 3v18h18"/>
+                                <path d="M18.7 8l-5.1 5.1-2.8-2.8L7 14"/>
+                            </svg>
+                            Antropometri Anak
+                        </a>
+
                     @else
                         {{-- Orang Tua Navigation --}}
                         <a href="{{ route('orang-tua.dashboard') }}" class="nav-link {{ request()->routeIs('orang-tua.dashboard') ? 'active' : '' }}">
@@ -1090,6 +1106,14 @@
                                 <rect x="14" y="14" width="7" height="7" rx="1"/>
                             </svg>
                             Dashboard
+                        </a>
+
+                        <a href="{{ route('orang-tua.antropometri.index') }}" class="nav-link {{ request()->routeIs('orang-tua.antropometri.*') ? 'active' : '' }}">
+                            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 3v18h18"/>
+                                <path d="M18.7 8l-5.1 5.1-2.8-2.8L7 14"/>
+                            </svg>
+                            Antropometri Anak
                         </a>
                     @endif
 

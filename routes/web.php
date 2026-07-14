@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AnakController;
+use App\Http\Controllers\AntropometriController;
 use App\Http\Controllers\Auth\OrangTuaRegisterController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\DashboardController;
@@ -60,6 +61,7 @@ Route::middleware(['auth', 'orang.tua'])
     ->group(function () {
         Route::get('/dashboard', [OrangTuaDashboardController::class, 'index'])->name('dashboard');
         Route::get('/anak/{id}', [OrangTuaDashboardController::class, 'showAnak'])->name('anak.show');
+        Route::get('/antropometri', [AntropometriController::class, 'index'])->name('antropometri.index');
     });
 
 // ── Super Admin Routes ─────────────────────────────
@@ -88,6 +90,9 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
         Route::get('/laporan', [SuperAdminController::class, 'laporanIndex'])->name('laporan.index');
         Route::get('/laporan/{posyandu}', [SuperAdminController::class, 'laporanShow'])->name('laporan.show');
         Route::get('/laporan/{posyandu}/download', [SuperAdminController::class, 'laporanDownload'])->name('laporan.download');
+
+        // Antropometri Anak (acuan Permenkes No. 2 Tahun 2020)
+        Route::get('/antropometri', [AntropometriController::class, 'index'])->name('antropometri.index');
     });
 
 // ── Petugas Dashboard & Measurements ───────────────
@@ -102,6 +107,9 @@ Route::middleware(['auth', 'verified', 'active.petugas'])->group(function () {
     // Manajemen Anak
     Route::resource('anak', AnakController::class);
     Route::get('/anak-search-orang-tua', [AnakController::class, 'searchOrangTua'])->name('anak.search-orang-tua');
+
+    // Antropometri Anak (acuan Permenkes No. 2 Tahun 2020)
+    Route::get('/antropometri', [AntropometriController::class, 'index'])->name('antropometri.index');
 
     // Laporan Pengukuran
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
