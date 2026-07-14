@@ -76,10 +76,14 @@
                         <th>BB (kg)</th>
                         <th>Z-Score</th>
                         <th>Kategori</th>
+                        <th>BB/U</th>
+                        <th>BB/PB atau BB/TB</th>
+                        <th>IMT/U</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($measurements as $m)
+                    @php $antro = $m->antropometriLengkap(); @endphp
                     <tr>
                         <td>{{ $m->measured_at->format('d M Y') }}</td>
                         <td>{{ $m->anak?->nama ?? $m->child_name ?? '-' }}</td>
@@ -93,6 +97,30 @@
                                 <span class="badge badge-stunting">Stunting</span>
                             @else
                                 <span class="badge badge-sangat-stunting">Sangat Stunting</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($antro)
+                                <div style="font-size: 11px; color: var(--text-muted);">{{ number_format($antro['bb_u']['z'], 2) }} SD</div>
+                                <span class="severity-pill severity-{{ $antro['bb_u']['severity'] }}">{{ $antro['bb_u']['label'] }}</span>
+                            @else
+                                <span style="color: var(--text-muted);">-</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($antro)
+                                <div style="font-size: 11px; color: var(--text-muted);">{{ $antro['bb_pb_tb']['z'] !== null ? number_format($antro['bb_pb_tb']['z'], 2).' SD' : '-' }}</div>
+                                <span class="severity-pill severity-{{ $antro['bb_pb_tb']['severity'] }}">{{ $antro['bb_pb_tb']['label'] }}</span>
+                            @else
+                                <span style="color: var(--text-muted);">-</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($antro)
+                                <div style="font-size: 11px; color: var(--text-muted);">{{ $antro['imt'] ?? '-' }} kg/m&sup2; &middot; {{ $antro['imt_u']['z'] !== null ? number_format($antro['imt_u']['z'], 2).' SD' : '-' }}</div>
+                                <span class="severity-pill severity-{{ $antro['imt_u']['severity'] }}">{{ $antro['imt_u']['label'] }}</span>
+                            @else
+                                <span style="color: var(--text-muted);">-</span>
                             @endif
                         </td>
                     </tr>

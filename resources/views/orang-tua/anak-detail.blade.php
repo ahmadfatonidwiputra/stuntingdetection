@@ -62,6 +62,59 @@
         display: inline-flex; align-items: center; gap: 4px;
         padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 600;
     }
+
+    .antro-lengkap-card {
+        background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 20px;
+        padding: 24px; margin-bottom: 24px;
+    }
+    .antro-status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 14px;
+        margin-top: 16px;
+    }
+    .antro-status-card {
+        padding: 16px;
+        border-radius: 14px;
+        background: var(--bg-main);
+        border: 1px solid var(--glass-border);
+        min-width: 0;
+    }
+    .antro-status-label {
+        font-size: 11.5px;
+        color: var(--text-muted);
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+    .antro-status-z {
+        font-size: 19px;
+        font-weight: 800;
+        margin-bottom: 6px;
+    }
+    .severity-pill {
+        display: block;
+        padding: 5px 10px;
+        border-radius: 8px;
+        font-size: 11.5px;
+        font-weight: 700;
+        line-height: 1.4;
+    }
+    .severity-severe, .severity-severe-high { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+    .severity-moderate, .severity-watch { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .severity-normal { background: rgba(16, 185, 129, 0.15); color: var(--accent); }
+    .severity-high { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
+    .severity-unknown { background: rgba(148, 163, 184, 0.15); color: var(--text-muted); }
+
+    .history-antro-badges {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+        width: 100%;
+    }
+    .history-antro-badges .severity-pill {
+        display: inline-flex;
+    }
 </style>
 @endpush
 
@@ -105,6 +158,14 @@
             @endif
         </div>
     </div>
+
+    {{-- Status Gizi Lengkap (Permenkes No. 2/2020) --}}
+    @if($measurements->last())
+    <div class="antro-lengkap-card">
+        <div class="chart-title">🧮 Status Gizi Lengkap Terkini (Permenkes RI No. 2 Tahun 2020)</div>
+        @include('antropometri.partials.status-lengkap', ['statusLengkap' => $measurements->last()->antropometriLengkap()])
+    </div>
+    @endif
 
     {{-- Grafik Pertumbuhan --}}
     @if($measurements->count() > 0)
@@ -170,6 +231,14 @@
             @endphp
             @if($s)
             <span class="status-badge-sm {{ $sc }}">{{ $s }}</span>
+            @endif
+            @php $pemAntro = $pem->antropometriLengkap(); @endphp
+            @if($pemAntro)
+            <div class="history-antro-badges">
+                <span class="severity-pill severity-{{ $pemAntro['bb_u']['severity'] }}">BB/U: {{ $pemAntro['bb_u']['label'] }}</span>
+                <span class="severity-pill severity-{{ $pemAntro['bb_pb_tb']['severity'] }}">BB/PB-TB: {{ $pemAntro['bb_pb_tb']['label'] }}</span>
+                <span class="severity-pill severity-{{ $pemAntro['imt_u']['severity'] }}">IMT/U: {{ $pemAntro['imt_u']['label'] }}</span>
+            </div>
             @endif
         </div>
         @empty

@@ -171,7 +171,23 @@
                     <span class="badge badge-normal">&ge; -2.0 Normal</span>
                 </div>
             </div>
+        </div>
+    </div>
 
+    <!-- Status Gizi Lengkap (Permenkes No. 2/2020) -->
+    <div class="glass-card fade-in" style="grid-column: 1 / -1;">
+        <div class="chart-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2">
+                <path d="M3 3v18h18"/>
+                <path d="M18.7 8l-5.1 5.1-2.8-2.8L7 14"/>
+            </svg>
+            Status Gizi Lengkap (Permenkes RI No. 2 Tahun 2020)
+        </div>
+        @include('antropometri.partials.status-lengkap', ['statusLengkap' => $measurement->antropometriLengkap()])
+    </div>
+
+    <div class="glass-card fade-in" style="grid-column: 1 / -1;">
+        <div class="detail-info">
             <div style="display: flex; gap: 12px;">
                 <a href="{{ $backUrl }}" class="btn btn-secondary" style="flex: 1; justify-content: center;">
                     Kembali

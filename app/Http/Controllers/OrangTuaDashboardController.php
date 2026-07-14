@@ -71,7 +71,7 @@ class OrangTuaDashboardController extends Controller
         $user = auth()->user();
 
         $anak = Anak::forOrangTua($user->id)
-            ->with(['posyandu', 'petugas', 'measurements' => fn($q) => $q->orderBy('measured_at')])
+            ->with(['posyandu', 'petugas', 'measurements' => fn($q) => $q->with('anak')->orderBy('measured_at')])
             ->findOrFail($id);
 
         $measurements = $anak->measurements;

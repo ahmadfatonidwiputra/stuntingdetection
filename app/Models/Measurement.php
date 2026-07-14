@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\AntropometriService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -98,5 +99,24 @@ class Measurement extends Model
         }
 
         return 'Normal';
+    }
+
+    /**
+     * Status gizi lengkap (BB/U, PB/U-TB/U, BB/PB-BB/TB, IMT/U) sesuai Standar Antropometri
+     * Anak - Permenkes RI No. 2 Tahun 2020, dihitung dari data pengukuran ini secara langsung
+     * (tidak disimpan di kolom manapun). Null jika data umur/tinggi/berat tidak lengkap.
+     */
+    public function antropometriLengkap(): ?array
+    {
+        $gender = $this->anak?->jenis_kelamin ?? $this->gender;
+        $lahir = $this->anak?->tanggal_lahir ?? $this->birth_date;
+
+        if (! $gender || ! $lahir || ! $this->measured_at || ! $this->height_cm || ! $this->weight_kg) {
+            return null;
+        }
+
+        $umurBulan = $lahir->diffInDays($this->measured_at) / AntropometriService::HARI_PER_BULAN;
+
+        return AntropometriService::hitungLengkap($gender, (float) $this->weight_kg, (float) $this->height_cm, $umurBulan);
     }
 }

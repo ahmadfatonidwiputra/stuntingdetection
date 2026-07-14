@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 
 class LandingController extends Controller
 {
-    private const HARI_PER_BULAN = 30.4375;
 
     public function home()
     {
@@ -48,27 +47,13 @@ class LandingController extends Controller
                 ? Carbon::parse($validated['tanggal_ukur'])->startOfDay()
                 : Carbon::today();
 
-            $umurBulan = min(60, max(0, $lahir->diffInDays($ukur) / self::HARI_PER_BULAN));
+            $umurBulan = min(60, max(0, $lahir->diffInDays($ukur) / AntropometriService::HARI_PER_BULAN));
 
             $gender = $validated['jenis_kelamin'];
             $beratKg = (float) $validated['berat_kg'];
             $tinggiCm = (float) $validated['tinggi_cm'];
-            $imt = $tinggiCm > 0 ? $beratKg / (($tinggiCm / 100) ** 2) : null;
 
-            $zBbU = AntropometriService::zScoreUmur('bb_u', $gender, $beratKg, $umurBulan);
-            $zPbTbU = AntropometriService::zScoreUmur('pb_tb_u', $gender, $tinggiCm, $umurBulan);
-            $zBbPbTb = AntropometriService::zScoreBeratMenurutPanjangTinggi($gender, $beratKg, $tinggiCm, $umurBulan);
-            $zImtU = $imt ? AntropometriService::zScoreUmur('imt_u', $gender, $imt, $umurBulan) : null;
-
-            $hasil = [
-                'umur_bulan' => round($umurBulan, 1),
-                'pakai_tb' => $umurBulan >= 24,
-                'imt' => $imt ? round($imt, 2) : null,
-                'bb_u' => ['z' => $zBbU, ...AntropometriService::klasifikasi('bb_u', $zBbU)],
-                'pb_tb_u' => ['z' => $zPbTbU, ...AntropometriService::klasifikasi('pb_tb_u', $zPbTbU)],
-                'bb_pb_tb' => ['z' => $zBbPbTb, ...AntropometriService::klasifikasi('bb_pb_tb', $zBbPbTb)],
-                'imt_u' => ['z' => $zImtU, ...AntropometriService::klasifikasi('imt_u', $zImtU)],
-            ];
+            $hasil = AntropometriService::hitungLengkap($gender, $beratKg, $tinggiCm, $umurBulan);
         }
 
         return view('landing.kalkulator-antropometri', [

@@ -408,6 +408,59 @@
             .badge-normal { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
             .badge-stunting { background: rgba(245, 158, 11, 0.15); color: var(--accent-orange); }
 
+            /* Severity pill (status gizi lengkap - BB/U, PB/U-TB/U, BB/PB-BB/TB, IMT/U) */
+            .severity-pill {
+                display: inline-flex;
+                align-items: center;
+                padding: 3px 10px;
+                border-radius: 999px;
+                font-size: 11.5px;
+                font-weight: 700;
+                white-space: nowrap;
+            }
+
+            .severity-severe, .severity-severe-high { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+            .severity-moderate, .severity-watch { background: rgba(245, 158, 11, 0.15); color: var(--accent-orange); }
+            .severity-normal { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
+            .severity-high { background: rgba(236, 72, 153, 0.15); color: var(--accent-pink); }
+            .severity-unknown { background: var(--bg-glass); color: var(--text-muted); }
+
+            .antro-status-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 14px;
+            }
+
+            .antro-status-card {
+                padding: 16px;
+                border-radius: var(--radius-sm);
+                background: var(--bg-glass);
+                border: 1px solid var(--border-glass);
+                min-width: 0;
+            }
+
+            .antro-status-card .severity-pill {
+                display: block;
+                white-space: normal;
+                text-align: left;
+                border-radius: 8px;
+                line-height: 1.4;
+                padding: 5px 10px;
+                margin-top: 6px;
+            }
+
+            .antro-status-label {
+                font-size: 11.5px;
+                color: var(--text-muted);
+                font-weight: 600;
+                margin-bottom: 6px;
+            }
+
+            .antro-status-z {
+                font-size: 19px;
+                font-weight: 800;
+            }
+
             /* Buttons */
             .btn {
                 display: inline-flex;

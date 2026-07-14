@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Auth;
 
 class AntropometriController extends Controller
 {
-    private const HARI_PER_BULAN = 30.4375;
 
     public function index(Request $request)
     {
@@ -84,7 +83,7 @@ class AntropometriController extends Controller
         $lahir = $anak->tanggal_lahir;
 
         $titik = $anak->measurements->map(function ($m) use ($lahir) {
-            $umurBulan = $lahir->diffInDays($m->measured_at) / self::HARI_PER_BULAN;
+            $umurBulan = $lahir->diffInDays($m->measured_at) / AntropometriService::HARI_PER_BULAN;
 
             return [
                 'measured_at' => $m->measured_at->format('Y-m-d'),
@@ -102,30 +101,19 @@ class AntropometriController extends Controller
         $penilaianKenaikan = null;
 
         if ($latest) {
-            $umurLatest = $lahir->diffInDays($latest->measured_at) / self::HARI_PER_BULAN;
+            $umurLatest = $lahir->diffInDays($latest->measured_at) / AntropometriService::HARI_PER_BULAN;
             $beratKg = (float) $latest->weight_kg;
             $tinggiCm = (float) $latest->height_cm;
-            $imt = $tinggiCm > 0 ? $beratKg / (($tinggiCm / 100) ** 2) : null;
-
-            $zBbU = AntropometriService::zScoreUmur('bb_u', $gender, $beratKg, $umurLatest);
-            $zPbTbU = AntropometriService::zScoreUmur('pb_tb_u', $gender, $tinggiCm, $umurLatest);
-            $zBbPbTb = AntropometriService::zScoreBeratMenurutPanjangTinggi($gender, $beratKg, $tinggiCm, $umurLatest);
-            $zImtU = $imt ? AntropometriService::zScoreUmur('imt_u', $gender, $imt, $umurLatest) : null;
 
             $statusTerkini = [
-                'umur_bulan' => round($umurLatest, 1),
                 'berat_kg' => $beratKg,
                 'tinggi_cm' => $tinggiCm,
-                'imt' => $imt ? round($imt, 2) : null,
-                'bb_u' => ['z' => $zBbU, ...AntropometriService::klasifikasi('bb_u', $zBbU)],
-                'pb_tb_u' => ['z' => $zPbTbU, ...AntropometriService::klasifikasi('pb_tb_u', $zPbTbU)],
-                'bb_pb_tb' => ['z' => $zBbPbTb, ...AntropometriService::klasifikasi('bb_pb_tb', $zBbPbTb)],
-                'imt_u' => ['z' => $zImtU, ...AntropometriService::klasifikasi('imt_u', $zImtU)],
+                ...AntropometriService::hitungLengkap($gender, $beratKg, $tinggiCm, $umurLatest),
             ];
 
             if ($anak->measurements->count() >= 2) {
                 $prev = $anak->measurements->slice(-2, 1)->first();
-                $umurPrev = $lahir->diffInDays($prev->measured_at) / self::HARI_PER_BULAN;
+                $umurPrev = $lahir->diffInDays($prev->measured_at) / AntropometriService::HARI_PER_BULAN;
                 $kenaikanGram = ((float) $latest->weight_kg - (float) $prev->weight_kg) * 1000;
 
                 $penilaian = AntropometriService::nilaiKenaikanBerat((int) floor($umurPrev), $kenaikanGram);

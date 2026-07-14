@@ -132,6 +132,7 @@
                 <li>• Laporan hanya mencakup data pengukuran di <strong style="color: var(--accent-blue);">{{ $posyanduName }}</strong>.</li>
                 <li>• Data mencakup: nama anak, NIK, tanggal lahir, hasil pengukuran TB/BB, Z-Score, dan kategori stunting.</li>
                 <li>• Laporan dilengkapi ringkasan distribusi kategori stunting (Normal, Stunting, Sangat Stunting).</li>
+                <li>• Laporan juga mencakup perhitungan status gizi lengkap sesuai Permenkes RI No. 2 Tahun 2020: IMT, Z-Score &amp; status BB/U, PB/U-TB/U, BB/PB-BB/TB, dan IMT/U.</li>
             </ul>
         </div>
     </div>

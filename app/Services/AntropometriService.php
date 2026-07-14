@@ -12,6 +12,9 @@ namespace App\Services;
  */
 class AntropometriService
 {
+    /** Rata-rata jumlah hari per bulan, dipakai untuk mengonversi rentang tanggal ke umur dalam bulan. */
+    public const HARI_PER_BULAN = 30.4375;
+
     /**
      * Empat indeks yang dinilai, dengan label dan cara membaca umur/ukurannya.
      */
@@ -317,6 +320,30 @@ class AntropometriService
         return [
             'status' => $kenaikanGram >= $minimum ? 'Naik (N)' : 'Tidak Naik (T)',
             'minimum' => $minimum,
+        ];
+    }
+
+    /**
+     * Hitung status gizi lengkap (BB/U, PB/U-TB/U, BB/PB-BB/TB, IMT/U) untuk satu titik pengukuran.
+     * Dipakai bersama oleh dashboard, kalkulator publik, dan riwayat/laporan pengukuran.
+     */
+    public static function hitungLengkap(string $gender, float $beratKg, float $tinggiCm, float $umurBulan): array
+    {
+        $imt = $tinggiCm > 0 ? $beratKg / (($tinggiCm / 100) ** 2) : null;
+
+        $zBbU = self::zScoreUmur('bb_u', $gender, $beratKg, $umurBulan);
+        $zPbTbU = self::zScoreUmur('pb_tb_u', $gender, $tinggiCm, $umurBulan);
+        $zBbPbTb = self::zScoreBeratMenurutPanjangTinggi($gender, $beratKg, $tinggiCm, $umurBulan);
+        $zImtU = $imt ? self::zScoreUmur('imt_u', $gender, $imt, $umurBulan) : null;
+
+        return [
+            'umur_bulan' => round($umurBulan, 1),
+            'pakai_tb' => $umurBulan >= 24,
+            'imt' => $imt ? round($imt, 2) : null,
+            'bb_u' => ['z' => $zBbU, ...self::klasifikasi('bb_u', $zBbU)],
+            'pb_tb_u' => ['z' => $zPbTbU, ...self::klasifikasi('pb_tb_u', $zPbTbU)],
+            'bb_pb_tb' => ['z' => $zBbPbTb, ...self::klasifikasi('bb_pb_tb', $zBbPbTb)],
+            'imt_u' => ['z' => $zImtU, ...self::klasifikasi('imt_u', $zImtU)],
         ];
     }
 }

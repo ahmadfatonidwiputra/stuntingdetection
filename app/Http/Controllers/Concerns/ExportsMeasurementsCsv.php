@@ -37,6 +37,15 @@ trait ExportsMeasurementsCsv
                 'Berat Badan (kg)',
                 'Z-Score',
                 'Kategori Stunting',
+                'IMT (kg/m2)',
+                'Z-Score BB/U',
+                'Status Gizi BB/U',
+                'Z-Score PB/U atau TB/U',
+                'Status Gizi PB/U atau TB/U',
+                'Z-Score BB/PB atau BB/TB',
+                'Status Gizi BB/PB atau BB/TB',
+                'Z-Score IMT/U',
+                'Status Gizi IMT/U',
                 'Catatan',
             ]);
 
@@ -45,6 +54,7 @@ trait ExportsMeasurementsCsv
                 $ageMonths = $anak && $anak->tanggal_lahir
                     ? (int) $anak->tanggal_lahir->diffInMonths($m->measured_at)
                     : '-';
+                $antro = $m->antropometriLengkap();
 
                 fputcsv($output, [
                     $i + 1,
@@ -60,6 +70,15 @@ trait ExportsMeasurementsCsv
                     number_format((float) $m->weight_kg, 1),
                     number_format((float) $m->z_score, 2),
                     $m->stunting_category,
+                    $antro['imt'] ?? '-',
+                    $antro['bb_u']['z'] ?? '-',
+                    $antro['bb_u']['label'] ?? '-',
+                    $antro['pb_tb_u']['z'] ?? '-',
+                    $antro['pb_tb_u']['label'] ?? '-',
+                    $antro['bb_pb_tb']['z'] ?? '-',
+                    $antro['bb_pb_tb']['label'] ?? '-',
+                    $antro['imt_u']['z'] ?? '-',
+                    $antro['imt_u']['label'] ?? '-',
                     $m->notes ?? '',
                 ]);
             }

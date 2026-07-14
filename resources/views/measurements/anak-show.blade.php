@@ -192,6 +192,19 @@
     </div>
 </div>
 
+@if($latestMeasurement)
+<div class="glass-card fade-in" style="margin-bottom: 24px;">
+    <div class="chart-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2">
+            <path d="M3 3v18h18"/>
+            <path d="M18.7 8l-5.1 5.1-2.8-2.8L7 14"/>
+        </svg>
+        Status Gizi Lengkap Terkini (Permenkes RI No. 2 Tahun 2020)
+    </div>
+    @include('antropometri.partials.status-lengkap', ['statusLengkap' => $latestMeasurement->antropometriLengkap()])
+</div>
+@endif
+
 @if($anak->measurements->isNotEmpty())
 <div class="glass-card fade-in growth-chart-card">
     <div class="growth-chart-toolbar">
@@ -250,6 +263,9 @@
                         <th>Berat</th>
                         <th>Z-Score</th>
                         <th>Status</th>
+                        <th>BB/U</th>
+                        <th>BB/PB atau BB/TB</th>
+                        <th>IMT/U</th>
                         <th>Petugas</th>
                         <th>Aksi</th>
                     </tr>
@@ -258,6 +274,7 @@
                     @foreach($anak->measurements as $measurement)
                         @php
                             $canDelete = (int) $measurement->user_id === (int) auth()->id();
+                            $antro = $measurement->antropometriLengkap();
                         @endphp
                         <tr>
                             <td style="color: var(--text-muted);">{{ $loop->iteration }}</td>
@@ -272,6 +289,30 @@
                                 <span class="badge badge-{{ strtolower(str_replace(' ', '-', $measurement->stunting_category)) }}">
                                     {{ $measurement->stunting_category }}
                                 </span>
+                            </td>
+                            <td>
+                                @if($antro)
+                                    <div style="font-size: 11px; color: var(--text-muted);">{{ number_format($antro['bb_u']['z'], 2) }} SD</div>
+                                    <span class="severity-pill severity-{{ $antro['bb_u']['severity'] }}">{{ $antro['bb_u']['label'] }}</span>
+                                @else
+                                    <span style="color: var(--text-muted);">-</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($antro)
+                                    <div style="font-size: 11px; color: var(--text-muted);">{{ $antro['bb_pb_tb']['z'] !== null ? number_format($antro['bb_pb_tb']['z'], 2).' SD' : '-' }}</div>
+                                    <span class="severity-pill severity-{{ $antro['bb_pb_tb']['severity'] }}">{{ $antro['bb_pb_tb']['label'] }}</span>
+                                @else
+                                    <span style="color: var(--text-muted);">-</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($antro)
+                                    <div style="font-size: 11px; color: var(--text-muted);">{{ $antro['imt'] ?? '-' }} kg/m&sup2; &middot; {{ $antro['imt_u']['z'] !== null ? number_format($antro['imt_u']['z'], 2).' SD' : '-' }}</div>
+                                    <span class="severity-pill severity-{{ $antro['imt_u']['severity'] }}">{{ $antro['imt_u']['label'] }}</span>
+                                @else
+                                    <span style="color: var(--text-muted);">-</span>
+                                @endif
                             </td>
                             <td>{{ $measurement->user->petugasProfile?->nama_lengkap ?? $measurement->user->name }}</td>
                             <td>
