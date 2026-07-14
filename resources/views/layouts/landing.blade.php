@@ -732,6 +732,8 @@
         document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
     </script>
     @stack('scripts')
+
+    @include('partials.welcome-popup')
 </body>
 
 </html>

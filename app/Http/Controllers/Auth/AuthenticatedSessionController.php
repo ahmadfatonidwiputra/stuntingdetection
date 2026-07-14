@@ -33,6 +33,17 @@ class AuthenticatedSessionController extends Controller
 
         $user = $request->user();
 
+        $roleLabels = [
+            'super_admin'      => 'Super Admin',
+            'petugas_posyandu' => 'Petugas Posyandu',
+            'orang_tua'        => 'Orang Tua',
+        ];
+
+        $request->session()->flash('login_welcome', [
+            'name' => $user->name,
+            'role' => $roleLabels[$user->role] ?? null,
+        ]);
+
         // Redirect based on role and status
         if ($user->isSuperAdmin()) {
             return redirect()->intended(route('super-admin.dashboard', absolute: false));

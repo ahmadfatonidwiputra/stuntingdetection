@@ -1160,6 +1160,7 @@
 
         @include('partials.toast')
         @include('partials.confirm-modal')
+        @include('partials.welcome-popup')
 
         <script>
             function toggleSidebar() {
