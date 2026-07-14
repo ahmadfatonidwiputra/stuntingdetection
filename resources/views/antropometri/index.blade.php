@@ -107,9 +107,33 @@
 
     .kategori-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
         gap: 20px;
         margin-bottom: 24px;
+    }
+
+    .kategori-grid > .glass-card {
+        min-width: 0;
+    }
+
+    .kategori-grid table.data-table th,
+    .kategori-grid table.data-table td {
+        white-space: normal;
+        word-break: break-word;
+        vertical-align: top;
+    }
+
+    .kategori-grid table.data-table td:last-child {
+        white-space: nowrap;
+    }
+
+    .kategori-grid .severity-pill {
+        display: block;
+        white-space: normal;
+        text-align: left;
+        border-radius: 8px;
+        line-height: 1.4;
+        padding: 6px 10px;
     }
 
     .severity-pill {
