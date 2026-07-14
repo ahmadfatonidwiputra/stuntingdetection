@@ -36,6 +36,11 @@
     {{-- Update Profile Info --}}
     @include('profile.partials.update-profile-information-form')
 
+    {{-- Data Orang Tua --}}
+    @if($orangTuaProfile)
+        @include('profile.partials.update-orang-tua-profile-form')
+    @endif
+
     {{-- Update Password --}}
     @include('profile.partials.update-password-form')
 

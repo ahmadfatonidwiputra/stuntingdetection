@@ -80,6 +80,7 @@
         </div>
         <div class="nav-pills">
             <a href="{{ route('orang-tua.dashboard') }}" class="nav-pill" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-color: transparent;">🏠 Dashboard</a>
+            <a href="{{ route('profile.edit') }}" class="nav-pill">👤 Profil</a>
             <form method="POST" action="{{ route('logout') }}" style="display: inline;">
                 @csrf
                 <button type="submit" class="logout-btn">Keluar</button>

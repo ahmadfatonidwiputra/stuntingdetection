@@ -18,7 +18,28 @@ class ProfileController extends Controller
     {
         return view('profile.edit', [
             'user' => $request->user(),
+            'orangTuaProfile' => $request->user()->isOrangTua() ? $request->user()->orangTuaProfile : null,
         ]);
+    }
+
+    /**
+     * Update data profil orang tua (nama, hubungan, telepon, alamat).
+     */
+    public function updateOrangTuaProfile(Request $request): RedirectResponse
+    {
+        $profile = $request->user()->orangTuaProfile;
+        abort_if(! $profile, 404);
+
+        $validated = $request->validate([
+            'nama_lengkap' => ['required', 'string', 'max:200'],
+            'hubungan'     => ['required', 'in:ayah,ibu,wali'],
+            'no_telepon'   => ['nullable', 'string', 'max:15'],
+            'alamat'       => ['nullable', 'string'],
+        ]);
+
+        $profile->update($validated);
+
+        return Redirect::route('profile.edit')->with('status', 'orang-tua-profile-updated');
     }
 
     /**
