@@ -77,6 +77,8 @@ class LandingController extends Controller
             'old' => $request->only(['jenis_kelamin', 'tanggal_lahir', 'tanggal_ukur', 'berat_kg', 'tinggi_cm']),
             'tabelBoys' => AntropometriService::tabelLengkap('L'),
             'tabelGirls' => AntropometriService::tabelLengkap('P'),
+            'kenaikanBb' => AntropometriService::KENAIKAN_BB_MINIMUM,
+            'kenaikanBbDiatas12' => AntropometriService::KENAIKAN_BB_MINIMUM_DIATAS_12_BULAN,
         ]);
     }
 }

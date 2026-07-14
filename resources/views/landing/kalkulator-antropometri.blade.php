@@ -436,6 +436,40 @@
             Sumber data: WHO Child Growth Standards (2006) &amp; WHO Growth Reference (2007).
         </div>
     </div>
+
+    <div class="glass fade-up" style="padding: 36px; max-width: 900px; margin: 40px auto 0;">
+        <h3 style="font-size: 19px; font-weight: 700; margin-bottom: 4px;">Tabel Kenaikan Berat Badan Minimum (KBM)</h3>
+        <p style="color: var(--text-muted); font-size: 13.5px; margin-bottom: 20px;">Digunakan untuk menilai apakah kenaikan berat badan anak antar kunjungan sudah mencukupi (status "Naik"/"Tidak Naik" pada KMS).</p>
+
+        <div style="overflow-x: auto;">
+            <table class="kalk-kategori-table">
+                <thead>
+                    <tr>
+                        <th>Interval Umur (bulan)</th>
+                        <th>Kenaikan Berat Badan Minimum</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($kenaikanBb as $row)
+                        <tr>
+                            <td>{{ $row['bulan'] }}</td>
+                            <td>{{ number_format($row['minimum_gram']) }} gram</td>
+                        </tr>
+                    @endforeach
+                    <tr>
+                        <td>&ge; 12 (per bulan, rata-rata indikatif)</td>
+                        <td>{{ number_format($kenaikanBbDiatas12) }} gram</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="kalk-note">
+            Tabel Kenaikan Berat Badan Minimum (KBM) di atas merupakan acuan praktis yang lazim digunakan pada Kartu Menuju Sehat (KMS)/Buku KIA untuk memantau kenaikan berat badan anak usia 0–12 bulan.
+            Nilai untuk umur &ge; 12 bulan bersifat indikatif karena laju kenaikan berat badan melambat dan bervariasi antar anak.
+            Untuk kepastian nilai baku sebagaimana Lampiran Permenkes RI No. 2 Tahun 2020, mohon periksa kembali dokumen resminya.
+        </div>
+    </div>
 </section>
 @endsection
 
