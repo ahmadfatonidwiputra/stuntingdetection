@@ -24,12 +24,20 @@ class AntropometriController extends Controller
             $grafik = $this->buildGrafik($selectedAnakId);
         }
 
+        $anakSearchData = $anakOptions->map(fn ($a) => [
+            'id' => $a->id,
+            'nama' => $a->nama,
+            'nik_anak' => $a->nik_anak,
+            'jenis_kelamin' => $a->jenis_kelamin,
+        ])->values();
+
         return view('antropometri.index', [
             'indikator' => AntropometriService::INDIKATOR,
             'kategori' => AntropometriService::KATEGORI,
             'kenaikanBb' => AntropometriService::KENAIKAN_BB_MINIMUM,
             'kenaikanBbDiatas12' => AntropometriService::KENAIKAN_BB_MINIMUM_DIATAS_12_BULAN,
             'anakOptions' => $anakOptions,
+            'anakSearchData' => $anakSearchData,
             'canPilihAnak' => $canPilihAnak,
             'selectedAnakId' => $selectedAnakId,
             'grafik' => $grafik,
@@ -52,7 +60,7 @@ class AntropometriController extends Controller
 
             $anak = Anak::where('posyandu_id', $posyanduId)
                 ->orderBy('nama')
-                ->get(['id', 'nama', 'jenis_kelamin', 'tanggal_lahir']);
+                ->get(['id', 'nama', 'nik_anak', 'jenis_kelamin', 'tanggal_lahir']);
 
             return [$anak, true];
         }
@@ -60,7 +68,7 @@ class AntropometriController extends Controller
         if ($user->isOrangTua()) {
             $anak = Anak::forOrangTua($user->id)
                 ->orderBy('nama')
-                ->get(['id', 'nama', 'jenis_kelamin', 'tanggal_lahir']);
+                ->get(['id', 'nama', 'nik_anak', 'jenis_kelamin', 'tanggal_lahir']);
 
             return [$anak, true];
         }

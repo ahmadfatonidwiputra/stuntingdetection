@@ -204,6 +204,49 @@
         margin-bottom: 24px;
     }
 
+    .antro-search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        background: var(--bg-card);
+        border: 1px solid var(--border-glass);
+        border-radius: var(--radius-sm);
+        margin-top: 6px;
+        max-height: 260px;
+        overflow-y: auto;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .antro-search-result-item {
+        padding: 10px 16px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+        border-bottom: 1px solid var(--border-glass);
+    }
+
+    .antro-search-result-item:last-child {
+        border-bottom: none;
+    }
+
+    .antro-search-result-item:hover,
+    .antro-search-result-item.is-active {
+        background: var(--bg-glass);
+    }
+
+    .antro-search-result-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--text-primary);
+    }
+
+    .antro-search-result-meta {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
     @media (max-width: 768px) {
         .antro-table-wrap { max-height: 420px; }
     }
@@ -303,16 +346,15 @@
 @if($canPilihAnak)
 <div class="antro-section" data-antro-section-panel="grafik">
     <div class="glass-card fade-in" style="margin-bottom: 24px;">
-        <form method="GET" action="{{ url()->current() }}" class="anak-picker">
-            <label class="form-label" style="margin-bottom:0;">Pilih Anak:</label>
-            <select name="anak_id" class="form-input" style="max-width: 320px;" onchange="this.form.submit()">
-                <option value="">— Pilih anak —</option>
-                @foreach($anakOptions as $opt)
-                    <option value="{{ $opt->id }}" {{ (int) $selectedAnakId === $opt->id ? 'selected' : '' }}>
-                        {{ $opt->nama }} ({{ $opt->jenis_kelamin === 'P' ? 'Perempuan' : 'Laki-laki' }})
-                    </option>
-                @endforeach
-            </select>
+        <form method="GET" action="{{ url()->current() }}" id="grafik-anak-form" class="anak-picker" style="position: relative;">
+            <label class="form-label" style="margin-bottom:0;">Cari Anak:</label>
+            <div style="position: relative; flex: 1; max-width: 360px;">
+                <input type="text" id="grafik-search-anak" class="form-input" autocomplete="off"
+                       value="{{ $grafik ? $grafik['anak']->nama . ' (' . ($grafik['anak']->nik_anak ?: '-') . ')' : '' }}"
+                       placeholder="Ketik nama atau NIK anak...">
+                <div id="grafik-search-results" class="antro-search-results" style="display:none;"></div>
+            </div>
+            <input type="hidden" name="anak_id" id="grafik-anak-id" value="{{ $selectedAnakId }}">
         </form>
 
         @if($anakOptions->isEmpty())
@@ -495,6 +537,67 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     });
+
+    // ── Cari Anak (nama atau NIK) ────────────────────
+    const grafikAnakData = @json($anakSearchData);
+    const searchAnakInput = document.getElementById('grafik-search-anak');
+    const searchAnakResults = document.getElementById('grafik-search-results');
+    const searchAnakIdInput = document.getElementById('grafik-anak-id');
+    const searchAnakForm = document.getElementById('grafik-anak-form');
+
+    function escHtml(str) {
+        const d = document.createElement('div');
+        d.textContent = String(str ?? '');
+        return d.innerHTML;
+    }
+
+    function renderGrafikAnakResults(matches) {
+        if (matches.length === 0) {
+            searchAnakResults.innerHTML = '<div class="antro-search-result-item" style="color: var(--text-muted); cursor: default;">Tidak ditemukan anak yang cocok.</div>';
+        } else {
+            searchAnakResults.innerHTML = matches.map((item, i) => `
+                <div class="antro-search-result-item" data-idx="${i}">
+                    <div class="antro-search-result-name">${escHtml(item.nama)}</div>
+                    <div class="antro-search-result-meta">NIK: ${escHtml(item.nik_anak) || '-'} &middot; ${item.jenis_kelamin === 'P' ? 'Perempuan' : 'Laki-laki'}</div>
+                </div>
+            `).join('');
+            searchAnakResults.querySelectorAll('.antro-search-result-item[data-idx]').forEach(function (el) {
+                el.addEventListener('click', function () {
+                    const item = matches[Number(el.getAttribute('data-idx'))];
+                    searchAnakIdInput.value = item.id;
+                    searchAnakInput.value = `${item.nama} (${item.nik_anak || '-'})`;
+                    searchAnakResults.style.display = 'none';
+                    searchAnakForm.submit();
+                });
+            });
+        }
+        searchAnakResults.style.display = 'block';
+    }
+
+    if (searchAnakInput) {
+        searchAnakInput.addEventListener('input', function () {
+            const q = this.value.trim().toLowerCase();
+            searchAnakIdInput.value = '';
+            if (q.length < 2) { searchAnakResults.style.display = 'none'; return; }
+
+            const matches = grafikAnakData.filter(function (item) {
+                return (item.nama && item.nama.toLowerCase().includes(q)) ||
+                    (item.nik_anak && item.nik_anak.toLowerCase().includes(q));
+            }).slice(0, 20);
+
+            renderGrafikAnakResults(matches);
+        });
+
+        searchAnakInput.addEventListener('focus', function () {
+            if (this.value.trim().length >= 2) { this.dispatchEvent(new Event('input')); }
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!searchAnakInput.contains(e.target) && !searchAnakResults.contains(e.target)) {
+                searchAnakResults.style.display = 'none';
+            }
+        });
+    }
 
     @if($grafik)
         const standarBb = @json($grafik['standar_bb']);
