@@ -8,7 +8,9 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class MeasurementController extends Controller
@@ -70,7 +72,10 @@ class MeasurementController extends Controller
             $this->ensureCanAccessAnak($selectedAnak);
         }
 
-        return view('measurements.create', compact('selectedAnak'));
+        $formToken = (string) Str::uuid();
+        $request->session()->put('measurement_form_token', $formToken);
+
+        return view('measurements.create', compact('selectedAnak', 'formToken'));
     }
 
     public function store(Request $request)
@@ -82,8 +87,37 @@ class MeasurementController extends Controller
             'photo' => 'nullable|image|max:5120',
             'measured_at' => 'required|date|before_or_equal:today',
             'notes' => 'nullable|string|max:1000',
+            'form_token' => 'required|string',
         ]);
 
+        $formToken = $validated['form_token'];
+
+        // Atomic lock: a second request bearing the same token (double-click,
+        // double-tap, or a network retry) will fail to acquire this and be
+        // treated as a duplicate instead of inserting a second row.
+        $lock = Cache::lock("measurement-submit:{$formToken}", 30);
+
+        if (! $lock->get()) {
+            return redirect()->route('measurements.create')
+                ->with('error', 'Data sedang diproses, mohon tunggu sebentar.');
+        }
+
+        try {
+            if ($request->session()->get('measurement_form_token') !== $formToken) {
+                return redirect()->route('measurements.create')
+                    ->with('error', 'Data ini sudah tersimpan sebelumnya.');
+            }
+
+            $request->session()->forget('measurement_form_token');
+
+            return $this->storeMeasurement($request, $validated);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function storeMeasurement(Request $request, array $validated)
+    {
         $anak = Anak::with('posyandu')->findOrFail($validated['anak_id']);
         $this->ensureCanAccessAnak($anak);
 

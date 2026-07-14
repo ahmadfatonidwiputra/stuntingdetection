@@ -51,6 +51,7 @@
 
 <form method="POST" action="{{ route('measurements.store') }}" enctype="multipart/form-data" id="measurementForm">
     @csrf
+    <input type="hidden" name="form_token" value="{{ $formToken }}">
     <input type="hidden" name="anak_id" id="anakIdInput" value="{{ old('anak_id', $selectedAnak?->id) }}">
 
     <div class="grid-2">
@@ -577,6 +578,19 @@ function resetCamera() {
     document.getElementById('weightInput').value = '';
     document.getElementById('posePhotoBase64').value = '';
 }
+
+// Prevent duplicate rows from double-clicking/double-tapping submit while
+// the request is in flight (server-side lock in MeasurementController@store
+// guards against the same thing at the network/race-condition level).
+document.getElementById('measurementForm').addEventListener('submit', function (event) {
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) {
+        event.preventDefault();
+        return;
+    }
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Menyimpan...';
+});
 </script>
 @endpush
 @endsection
