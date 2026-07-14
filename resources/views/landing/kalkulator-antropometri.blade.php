@@ -163,9 +163,93 @@
         margin-top: 24px;
     }
 
+    /* ── Tabel Standar Antropometri ─────────────── */
+    .antro-tabs, .antro-subtabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+
+    .antro-tab, .antro-subtab {
+        padding: 8px 16px;
+        border-radius: 999px;
+        border: 1px solid var(--glass-border);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        white-space: nowrap;
+    }
+
+    .antro-tab:hover, .antro-subtab:hover {
+        color: var(--text);
+        background: var(--glass-hover);
+    }
+
+    .antro-tab.active, .antro-subtab.active {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border-color: transparent;
+    }
+
+    .antro-table-wrap {
+        max-height: 480px;
+        overflow: auto;
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+    }
+
+    .antro-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13.5px;
+    }
+
+    .antro-table th, .antro-table td {
+        text-align: center;
+        white-space: nowrap;
+        padding: 10px 14px;
+    }
+
+    .antro-table th {
+        position: sticky;
+        top: 0;
+        background: var(--bg-main);
+        color: var(--text-muted);
+        font-size: 11.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid var(--glass-border);
+        z-index: 2;
+    }
+
+    .antro-table td {
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--glass-border);
+    }
+
+    .antro-table th:first-child, .antro-table td:first-child {
+        text-align: left;
+        position: sticky;
+        left: 0;
+        background: var(--bg-card);
+    }
+
+    .antro-table tr:last-child td {
+        border-bottom: none;
+    }
+
     @media (max-width: 640px) {
         .kalk-form-grid {
             grid-template-columns: 1fr;
+        }
+
+        .antro-table-wrap {
+            max-height: 420px;
         }
     }
 </style>
@@ -309,5 +393,78 @@
             dasar penyusunan Standar Antropometri Anak &mdash; Peraturan Menteri Kesehatan RI No. 2 Tahun 2020.
         </div>
     </div>
+
+    <div class="glass fade-up" style="padding: 36px; max-width: 900px; margin: 40px auto 0;">
+        <h3 style="font-size: 19px; font-weight: 700; margin-bottom: 4px;">Tabel Standar Antropometri Penilaian Status Gizi Anak</h3>
+        <p style="color: var(--text-muted); font-size: 13.5px; margin-bottom: 20px;">Umur 0–60 bulan, dibedakan untuk anak laki-laki dan perempuan.</p>
+
+        <div class="antro-tabs" data-antro-gender-tabs>
+            <button type="button" class="antro-tab active" data-antro-gender="L">Anak Laki-laki</button>
+            <button type="button" class="antro-tab" data-antro-gender="P">Anak Perempuan</button>
+        </div>
+
+        @foreach(['L' => $tabelBoys, 'P' => $tabelGirls] as $genderKey => $tabel)
+            <div class="antro-gender-panel" data-antro-gender-panel="{{ $genderKey }}" style="{{ $genderKey === 'P' ? 'display:none;' : '' }}">
+                <div class="antro-subtabs" data-antro-indikator-tabs="{{ $genderKey }}">
+                    <button type="button" class="antro-subtab active" data-antro-indikator="bb_u">BB/U</button>
+                    <button type="button" class="antro-subtab" data-antro-indikator="pb_tb_u">PB/U atau TB/U</button>
+                    <button type="button" class="antro-subtab" data-antro-indikator="bb_pb">BB/PB (0–24 bulan)</button>
+                    <button type="button" class="antro-subtab" data-antro-indikator="bb_tb">BB/TB (24–60 bulan)</button>
+                    <button type="button" class="antro-subtab" data-antro-indikator="imt_u">IMT/U</button>
+                </div>
+
+                <div class="antro-indikator-panel" data-antro-indikator-panel="bb_u">
+                    @include('antropometri.partials.tabel-standar', ['rows' => $tabel['bb_u'], 'keyLabel' => 'Umur (bulan)'])
+                </div>
+                <div class="antro-indikator-panel" data-antro-indikator-panel="pb_tb_u" style="display:none;">
+                    @include('antropometri.partials.tabel-standar', ['rows' => $tabel['pb_tb_u'], 'keyLabel' => 'Umur (bulan)'])
+                </div>
+                <div class="antro-indikator-panel" data-antro-indikator-panel="bb_pb" style="display:none;">
+                    @include('antropometri.partials.tabel-standar', ['rows' => $tabel['bb_pb'], 'keyLabel' => 'Panjang Badan (cm)'])
+                </div>
+                <div class="antro-indikator-panel" data-antro-indikator-panel="bb_tb" style="display:none;">
+                    @include('antropometri.partials.tabel-standar', ['rows' => $tabel['bb_tb'], 'keyLabel' => 'Tinggi Badan (cm)'])
+                </div>
+                <div class="antro-indikator-panel" data-antro-indikator-panel="imt_u" style="display:none;">
+                    @include('antropometri.partials.tabel-standar', ['rows' => $tabel['imt_u'], 'keyLabel' => 'Umur (bulan)'])
+                </div>
+            </div>
+        @endforeach
+
+        <div class="kalk-note">
+            PB (panjang badan, diukur telentang) digunakan untuk umur 0–24 bulan; TB (tinggi badan, diukur berdiri) digunakan untuk umur di atas 24 bulan.
+            Sumber data: WHO Child Growth Standards (2006) &amp; WHO Growth Reference (2007).
+        </div>
+    </div>
 </section>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const genderTabs = document.querySelectorAll('[data-antro-gender-tabs] .antro-tab');
+    genderTabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            const gender = tab.getAttribute('data-antro-gender');
+            genderTabs.forEach(t => t.classList.toggle('active', t === tab));
+            document.querySelectorAll('[data-antro-gender-panel]').forEach(function (panel) {
+                panel.style.display = panel.getAttribute('data-antro-gender-panel') === gender ? 'block' : 'none';
+            });
+        });
+    });
+
+    document.querySelectorAll('[data-antro-indikator-tabs]').forEach(function (tabGroup) {
+        const panelWrap = tabGroup.closest('.antro-gender-panel');
+        tabGroup.querySelectorAll('.antro-subtab').forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                const indikator = tab.getAttribute('data-antro-indikator');
+                tabGroup.querySelectorAll('.antro-subtab').forEach(t => t.classList.toggle('active', t === tab));
+                panelWrap.querySelectorAll('[data-antro-indikator-panel]').forEach(function (panel) {
+                    panel.style.display = panel.getAttribute('data-antro-indikator-panel') === indikator ? 'block' : 'none';
+                });
+            });
+        });
+    });
+});
+</script>
+@endpush

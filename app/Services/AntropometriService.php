@@ -150,6 +150,20 @@ class AntropometriService
     }
 
     /**
+     * Bangun seluruh tabel standar (BB/U, PB/U-TB/U, BB/PB, BB/TB, IMT/U) untuk satu gender.
+     */
+    public static function tabelLengkap(string $gender): array
+    {
+        return [
+            'bb_u' => self::tabelUmurBulanan('bb_u', $gender),
+            'pb_tb_u' => self::tabelUmurBulanan('pb_tb_u', $gender),
+            'bb_pb' => self::tabelPanjangTinggi($gender, false),
+            'bb_tb' => self::tabelPanjangTinggi($gender, true),
+            'imt_u' => self::tabelUmurBulanan('imt_u', $gender),
+        ];
+    }
+
+    /**
      * Hitung Z-score memakai rumus LMS WHO:
      * Z = ((X/M)^L - 1) / (L*S)  jika L != 0
      * Z = ln(X/M) / S            jika L == 0

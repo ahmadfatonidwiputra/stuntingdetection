@@ -75,6 +75,8 @@ class LandingController extends Controller
             'hasil' => $hasil,
             'kategori' => AntropometriService::KATEGORI,
             'old' => $request->only(['jenis_kelamin', 'tanggal_lahir', 'tanggal_ukur', 'berat_kg', 'tinggi_cm']),
+            'tabelBoys' => AntropometriService::tabelLengkap('L'),
+            'tabelGirls' => AntropometriService::tabelLengkap('P'),
         ]);
     }
 }

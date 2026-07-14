@@ -33,8 +33,8 @@ class AntropometriController extends Controller
             'canPilihAnak' => $canPilihAnak,
             'selectedAnakId' => $selectedAnakId,
             'grafik' => $grafik,
-            'tabelBoys' => $this->buildTabelIndikator('L'),
-            'tabelGirls' => $this->buildTabelIndikator('P'),
+            'tabelBoys' => AntropometriService::tabelLengkap('L'),
+            'tabelGirls' => AntropometriService::tabelLengkap('P'),
         ]);
     }
 
@@ -158,19 +158,5 @@ class AntropometriController extends Controller
         }
 
         return $out;
-    }
-
-    /**
-     * Bangun data tabel standar (BB/U, PB/U-TB/U, BB/PB-BB/TB, IMT/U) untuk satu gender.
-     */
-    private function buildTabelIndikator(string $gender): array
-    {
-        return [
-            'bb_u' => AntropometriService::tabelUmurBulanan('bb_u', $gender),
-            'pb_tb_u' => AntropometriService::tabelUmurBulanan('pb_tb_u', $gender),
-            'bb_pb' => AntropometriService::tabelPanjangTinggi($gender, false),
-            'bb_tb' => AntropometriService::tabelPanjangTinggi($gender, true),
-            'imt_u' => AntropometriService::tabelUmurBulanan('imt_u', $gender),
-        ];
     }
 }
