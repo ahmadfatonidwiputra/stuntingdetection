@@ -117,6 +117,7 @@
                     <div class="result-value" id="estimatedWeight">-</div>
                     <div class="result-unit">Estimasi Berat (kg)</div>
                 </div>
+                <p id="predictionDuration" style="flex-basis: 100%; font-size: 11px; color: var(--text-muted); text-align: center; margin: 0;"></p>
             </div>
 
             <div style="margin-top: 12px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 10px; border: 1px solid rgba(59, 130, 246, 0.2);">
@@ -554,6 +555,13 @@ async function sendToMLApi(imageBlob, isRetry = false) {
             if (data.weight_error) {
                 console.warn('Weight estimation error:', data.weight_error);
             }
+        }
+
+        const durationEl = document.getElementById('predictionDuration');
+        if (data.duration_ms !== null && data.duration_ms !== undefined) {
+            durationEl.textContent = '⏱ Waktu prediksi model: ' + (data.duration_ms / 1000).toFixed(2) + ' detik';
+        } else {
+            durationEl.textContent = '';
         }
 
         document.getElementById('estimationResult').style.display = 'flex';

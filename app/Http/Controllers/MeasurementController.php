@@ -311,7 +311,9 @@ class MeasurementController extends Controller
                 CURLOPT_CONNECTTIMEOUT => 10,
             ]);
 
+            $startTime = microtime(true);
             $response = curl_exec($ch);
+            $durationMs = round((microtime(true) - $startTime) * 1000);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $error = curl_error($ch);
             curl_close($ch);
@@ -334,6 +336,7 @@ class MeasurementController extends Controller
                 'weight_kg' => $weightKg,
                 'height_error' => $heightCm === null ? ($data['message'] ?? 'Tinggi badan tidak dapat diprediksi.') : null,
                 'weight_error' => $weightKg === null ? ($data['message'] ?? 'Berat badan tidak dapat diprediksi.') : null,
+                'duration_ms' => $durationMs,
             ]);
         } catch (\Exception $e) {
             return response()->json([
