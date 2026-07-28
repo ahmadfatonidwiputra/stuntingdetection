@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Anak;
 use App\Models\Measurement;
+use App\Services\AntropometriService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -373,6 +374,45 @@ class MeasurementController extends Controller
         curl_close($ch);
 
         return response()->json(['status' => 'pinged']);
+    }
+
+    /**
+     * Hitung status gizi lengkap (Z-Score BB/U, PB/U-TB/U, BB/PB-BB/TB, IMT/U) untuk
+     * data anak + hasil tinggi/berat badan yang belum disimpan, dipakai oleh form
+     * "Pengukuran Baru" agar status gizi langsung tampil begitu hasil prediksi ML keluar.
+     */
+    public function antropometri(Request $request)
+    {
+        $validated = $request->validate([
+            'gender' => 'required|in:L,P',
+            'birth_date' => 'required|date',
+            'measured_at' => 'required|date',
+            'height_cm' => 'required|numeric|min:30|max:150',
+            'weight_kg' => 'required|numeric|min:1|max:50',
+        ]);
+
+        $lahir = Carbon::parse($validated['birth_date']);
+        $diukur = Carbon::parse($validated['measured_at']);
+
+        if ($diukur->lt($lahir)) {
+            return response()->json([
+                'error' => 'Tanggal pengukuran tidak boleh mendahului tanggal lahir.',
+            ], 422);
+        }
+
+        $startTime = microtime(true);
+
+        $umurBulan = $lahir->diffInDays($diukur) / AntropometriService::HARI_PER_BULAN;
+        $result = AntropometriService::hitungLengkap(
+            $validated['gender'],
+            (float) $validated['weight_kg'],
+            (float) $validated['height_cm'],
+            $umurBulan
+        );
+
+        $durationMs = round((microtime(true) - $startTime) * 1000, 2);
+
+        return response()->json($result + ['duration_ms' => $durationMs]);
     }
 
     private function applyDateFilters(Builder $query, Request $request): Builder

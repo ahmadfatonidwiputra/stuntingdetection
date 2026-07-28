@@ -121,6 +121,13 @@
                 <p id="uploadDuration" style="flex-basis: 100%; font-size: 11px; color: var(--text-muted); text-align: center; margin: 0;"></p>
             </div>
 
+            <!-- Status Gizi (Z-Score BB/U, PB/U-TB/U, BB/PB-BB/TB, IMT/U) -->
+            <div id="antropometriResult" style="display:none; margin-top: 16px;">
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px; font-weight: 600;">📊 Status Gizi (berdasarkan data anak terpilih)</p>
+                <div class="antro-status-grid" id="antropometriGrid"></div>
+                <p id="antropometriDuration" style="font-size: 11px; color: var(--text-muted); text-align: center; margin: 8px 0 0;"></p>
+            </div>
+
             <div style="margin-top: 12px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 10px; border: 1px solid rgba(59, 130, 246, 0.2);">
                 <p style="font-size: 12px; color: var(--accent-blue); margin-bottom: 4px; font-weight: 600;">💡 Tips untuk hasil akurat:</p>
                 <ul style="font-size: 11px; color: var(--text-muted); list-style: disc; padding-left: 16px; line-height: 1.8;">
@@ -268,6 +275,7 @@
 let stream = null;
 const PREDICT_URL = '{{ route("measurements.predict") }}';
 const WARMUP_URL = '{{ route("measurements.warmup") }}';
+const ANTROPOMETRI_URL = '{{ route("measurements.antropometri") }}';
 const CSRF_TOKEN = '{{ csrf_token() }}';
 
 // Nudge the ML API awake as soon as this page loads, so it's hopefully
@@ -592,11 +600,89 @@ async function sendToMLApi(imageBlob, isRetry = false) {
         }
 
         document.getElementById('estimationResult').style.display = 'flex';
+
+        if (data.height_cm !== null && data.height_cm !== undefined && data.weight_kg !== null && data.weight_kg !== undefined) {
+            fetchAntropometri(data.height_cm, data.weight_kg);
+        }
     } catch (err) {
         console.error('ML API error:', err);
         alert('Error saat prediksi ML: ' + err.message + '\n\nLayanan prediksi mungkin sedang tidak tersedia.\nSilakan masukkan tinggi & berat badan secara manual.');
     } finally {
         loading.style.display = 'none';
+    }
+}
+
+// Hitung status gizi (Z-Score BB/U, PB/U-TB/U, BB/PB-BB/TB, IMT/U) berdasarkan
+// data anak yang sudah dipilih (tanggal lahir & jenis kelamin) + hasil tinggi/berat dari model.
+async function fetchAntropometri(heightCm, weightKg) {
+    const resultBox = document.getElementById('antropometriResult');
+    const grid = document.getElementById('antropometriGrid');
+    const durationEl = document.getElementById('antropometriDuration');
+
+    const genderRadio = document.querySelector('input[name="gender"]:checked');
+    const birthDate = birthDateInput.value;
+    const measuredAt = measuredAtInput.value;
+
+    resultBox.style.display = 'block';
+
+    if (!genderRadio || !birthDate || !measuredAt) {
+        grid.innerHTML = '<div style="font-size: 13px; color: var(--text-muted);">Pilih data anak terlebih dahulu untuk menghitung status gizi.</div>';
+        durationEl.textContent = '';
+        return;
+    }
+
+    try {
+        const response = await fetch(ANTROPOMETRI_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': CSRF_TOKEN,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                gender: genderRadio.value,
+                birth_date: birthDate,
+                measured_at: measuredAt,
+                height_cm: heightCm,
+                weight_kg: weightKg
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Gagal menghitung status gizi.');
+        }
+
+        const cards = [
+            { key: 'bb_u', label: 'BB/U (Berat Badan menurut Umur)' },
+            { key: 'pb_tb_u', label: 'PB/U atau TB/U' },
+            { key: 'bb_pb_tb', label: 'BB/PB atau BB/TB' },
+            { key: 'imt_u', label: 'IMT/U' + (result.imt ? ' · ' + result.imt + ' kg/m²' : '') },
+        ];
+
+        grid.innerHTML = cards.map(function (c) {
+            const indikator = result[c.key];
+            const zText = (indikator && indikator.z !== null && indikator.z !== undefined)
+                ? Number(indikator.z).toFixed(2) + ' SD'
+                : '-';
+            const severity = indikator ? indikator.severity : 'unknown';
+            const label = indikator ? indikator.label : 'Tidak dapat dihitung';
+
+            return '<div class="antro-status-card">'
+                + '<div class="antro-status-label">' + c.label + '</div>'
+                + '<div class="antro-status-z">' + zText + '</div>'
+                + '<span class="severity-pill severity-' + severity + '">' + label + '</span>'
+                + '</div>';
+        }).join('');
+
+        durationEl.textContent = (result.duration_ms !== null && result.duration_ms !== undefined)
+            ? '⏱ Waktu hitung status gizi: ' + result.duration_ms + ' ms'
+            : '';
+    } catch (err) {
+        console.error('Antropometri error:', err);
+        grid.innerHTML = '<div style="font-size: 13px; color: var(--text-muted);">' + err.message + '</div>';
+        durationEl.textContent = '';
     }
 }
 

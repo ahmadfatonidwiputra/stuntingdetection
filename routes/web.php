@@ -104,6 +104,7 @@ Route::middleware(['auth', 'verified', 'active.petugas'])->group(function () {
     Route::get('/measurements-search-anak', [MeasurementController::class, 'searchAnak'])->name('measurements.search-anak');
     Route::post('/measurements/predict', [MeasurementController::class, 'predict'])->name('measurements.predict');
     Route::post('/measurements/warmup', [MeasurementController::class, 'warmup'])->name('measurements.warmup');
+    Route::post('/measurements/antropometri', [MeasurementController::class, 'antropometri'])->name('measurements.antropometri');
 
     // Manajemen Anak
     Route::resource('anak', AnakController::class);
