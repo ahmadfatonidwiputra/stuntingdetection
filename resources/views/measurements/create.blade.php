@@ -118,6 +118,7 @@
                     <div class="result-unit">Estimasi Berat (kg)</div>
                 </div>
                 <p id="predictionDuration" style="flex-basis: 100%; font-size: 11px; color: var(--text-muted); text-align: center; margin: 0;"></p>
+                <p id="uploadDuration" style="flex-basis: 100%; font-size: 11px; color: var(--text-muted); text-align: center; margin: 0;"></p>
             </div>
 
             <div style="margin-top: 12px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 10px; border: 1px solid rgba(59, 130, 246, 0.2);">
@@ -512,25 +513,44 @@ async function sendToMLApi(imageBlob, isRetry = false) {
         formData.append('image', imageBlob, 'photo.jpg');
         formData.append('_token', CSRF_TOKEN);
 
-        const response = await fetch(PREDICT_URL, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': CSRF_TOKEN,
-                'Accept': 'application/json'
-            }
+        // Use XHR (not fetch) so we can measure how long it takes to upload
+        // the image bytes to the server, separate from the model's processing time.
+        const uploadStart = performance.now();
+        let uploadDurationMs = null;
+
+        const { httpStatus, ok, data } = await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', PREDICT_URL);
+            xhr.setRequestHeader('X-CSRF-TOKEN', CSRF_TOKEN);
+            xhr.setRequestHeader('Accept', 'application/json');
+
+            xhr.upload.addEventListener('load', () => {
+                uploadDurationMs = performance.now() - uploadStart;
+            });
+
+            xhr.onload = () => {
+                let parsed = {};
+                try {
+                    parsed = JSON.parse(xhr.responseText);
+                } catch (e) {}
+                resolve({
+                    httpStatus: xhr.status,
+                    ok: xhr.status >= 200 && xhr.status < 300,
+                    data: parsed
+                });
+            };
+            xhr.onerror = () => reject(new Error('Gagal mengupload gambar ke server.'));
+
+            xhr.send(formData);
         });
 
-        if (!response.ok) {
+        if (!ok) {
             // First failure is often a cold-start on the ML API side; retry once automatically.
             if (!isRetry) {
                 return sendToMLApi(imageBlob, true);
             }
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error || 'Server error ' + response.status);
+            throw new Error(data.error || 'Server error ' + httpStatus);
         }
-
-        const data = await response.json();
 
         // Fill pose photo base64
         if (data.pose_image_base64) {
@@ -562,6 +582,13 @@ async function sendToMLApi(imageBlob, isRetry = false) {
             durationEl.textContent = '⏱ Waktu prediksi model: ' + (data.duration_ms / 1000).toFixed(2) + ' detik';
         } else {
             durationEl.textContent = '';
+        }
+
+        const uploadDurationEl = document.getElementById('uploadDuration');
+        if (uploadDurationMs !== null) {
+            uploadDurationEl.textContent = '📤 Waktu upload gambar: ' + (uploadDurationMs / 1000).toFixed(2) + ' detik';
+        } else {
+            uploadDurationEl.textContent = '';
         }
 
         document.getElementById('estimationResult').style.display = 'flex';
