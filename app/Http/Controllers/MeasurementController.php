@@ -21,11 +21,16 @@ class MeasurementController extends Controller
         $user = $request->user();
         $posyanduId = $user->petugasProfile?->posyandu_id;
         $hasDateFilter = $request->filled('from') || $request->filled('to');
+        $hasCategoryFilter = $request->filled('stunting_category') || $request->filled('gender');
+        $hasMeasurementFilter = $hasDateFilter || $request->filled('stunting_category');
+
+        $applyMeasurementFilters = fn ($query) => $this->applyDateFilters($query, $request)
+            ->when($request->filled('stunting_category'), fn ($q) => $q->where('stunting_category', $request->stunting_category));
 
         $latestMeasuredAtSubquery = Measurement::query()
             ->select('measured_at')
             ->whereColumn('anak_id', 'anak.id')
-            ->tap(fn (Builder $query) => $this->applyDateFilters($query, $request))
+            ->tap($applyMeasurementFilters)
             ->latest('measured_at')
             ->limit(1);
 
@@ -42,16 +47,17 @@ class MeasurementController extends Controller
                       ->orWhereRaw('lower(nik_anak) like ?', ['%' . $search . '%']);
                 });
             })
-            ->whereHas('measurements', fn ($query) => $this->applyDateFilters($query, $request))
+            ->when($request->filled('gender'), fn (Builder $query) => $query->where('jenis_kelamin', $request->gender))
+            ->whereHas('measurements', $applyMeasurementFilters)
             ->withCount([
-                'measurements as filtered_measurements_count' => fn ($query) => $this->applyDateFilters($query, $request),
+                'measurements as filtered_measurements_count' => $applyMeasurementFilters,
             ])
             ->orderByDesc($latestMeasuredAtSubquery)
             ->orderBy('nama');
 
-        if ($hasDateFilter) {
+        if ($hasMeasurementFilter) {
             $query->with([
-                'measurements' => fn ($query) => $this->applyDateFilters($query, $request)
+                'measurements' => fn ($query) => $applyMeasurementFilters($query)
                     ->latest('measured_at'),
             ]);
         } else {
@@ -60,7 +66,11 @@ class MeasurementController extends Controller
 
         $anakList = $query->paginate(10)->withQueryString();
 
-        return view('measurements.index', compact('anakList', 'hasDateFilter'));
+        return view('measurements.index', [
+            'anakList' => $anakList,
+            'hasDateFilter' => $hasMeasurementFilter,
+            'hasCategoryFilter' => $hasCategoryFilter,
+        ]);
     }
 
     public function create(Request $request)
@@ -186,7 +196,7 @@ class MeasurementController extends Controller
             ->with('success', 'Pengukuran berhasil disimpan!');
     }
 
-    public function showAnak(Anak $anak)
+    public function showAnak(Anak $anak, Request $request)
     {
         $this->ensureCanAccessAnak($anak);
 
@@ -196,11 +206,31 @@ class MeasurementController extends Controller
             'latestPhotoMeasurement',
             'measurements' => fn ($query) => $query
                 ->with(['anak', 'user.petugasProfile'])
+                ->when($request->filled('stunting_category'), fn ($q) => $q->where('stunting_category', $request->stunting_category))
+                ->tap(fn ($q) => $this->applyDateFilters($q, $request))
                 ->orderBy('measured_at'),
         ]);
 
+        if ($request->filled('gizi_status')) {
+            $anak->setRelation('measurements', $anak->measurements->filter(function ($measurement) use ($request) {
+                $antro = $measurement->antropometriLengkap();
+                if (! $antro) {
+                    return false;
+                }
+
+                $hasIssue = collect(['bb_u', 'pb_tb_u', 'bb_pb_tb', 'imt_u'])
+                    ->contains(fn ($key) => ($antro[$key]['severity'] ?? 'normal') !== 'normal');
+
+                return $request->gizi_status === 'bermasalah' ? $hasIssue : ! $hasIssue;
+            })->values());
+        }
+
+        $hasHistoryFilter = $request->filled('from') || $request->filled('to')
+            || $request->filled('stunting_category') || $request->filled('gizi_status');
+
         return view('measurements.anak-show', [
             'anak' => $anak,
+            'hasHistoryFilter' => $hasHistoryFilter,
             'latestMeasurement' => $anak->latestMeasurement,
         ]);
     }
@@ -419,7 +449,7 @@ class MeasurementController extends Controller
         return response()->json($result + ['duration_ms' => $durationMs]);
     }
 
-    private function applyDateFilters(Builder $query, Request $request): Builder
+    private function applyDateFilters($query, Request $request)
     {
         if ($request->filled('from')) {
             $query->whereDate('measured_at', '>=', $request->from);

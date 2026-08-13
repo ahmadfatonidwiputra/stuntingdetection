@@ -30,6 +30,23 @@
             <label class="form-label">Sampai Tanggal</label>
             <input type="date" name="to" class="form-input" value="{{ request('to') }}">
         </div>
+        <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 170px;">
+            <label class="form-label">Kategori Stunting</label>
+            <select name="stunting_category" class="form-input">
+                <option value="">Semua Kategori</option>
+                <option value="Normal" {{ request('stunting_category') === 'Normal' ? 'selected' : '' }}>Normal</option>
+                <option value="Stunting" {{ request('stunting_category') === 'Stunting' ? 'selected' : '' }}>Stunting</option>
+                <option value="Sangat Stunting" {{ request('stunting_category') === 'Sangat Stunting' ? 'selected' : '' }}>Sangat Stunting</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
+            <label class="form-label">Jenis Kelamin</label>
+            <select name="gender" class="form-input">
+                <option value="">Semua</option>
+                <option value="L" {{ request('gender') === 'L' ? 'selected' : '' }}>Laki-laki</option>
+                <option value="P" {{ request('gender') === 'P' ? 'selected' : '' }}>Perempuan</option>
+            </select>
+        </div>
         <div style="display: flex; gap: 8px;">
             <button type="submit" class="btn btn-primary btn-sm">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -38,7 +55,7 @@
                 </svg>
                 Filter
             </button>
-            @if(request('from') || request('to') || request('search'))
+            @if(request('from') || request('to') || request('search') || request('stunting_category') || request('gender'))
                 <a href="{{ route('measurements.index') }}" class="btn btn-secondary btn-sm">Reset</a>
             @endif
         </div>
@@ -140,7 +157,7 @@
         <div class="empty-state">
             <div class="empty-state-icon">👶</div>
             <h3>Belum ada riwayat per anak</h3>
-            <p>{{ request('from') || request('to') ? 'Tidak ada pengukuran anak pada rentang tanggal yang dipilih.' : 'Mulai catat pengukuran anak untuk melihat perkembangan mereka di sini.' }}</p>
+            <p>{{ request('from') || request('to') || request('stunting_category') || request('gender') ? 'Tidak ada pengukuran anak yang cocok dengan filter yang dipilih.' : 'Mulai catat pengukuran anak untuk melihat perkembangan mereka di sini.' }}</p>
             <a href="{{ route('measurements.create') }}" class="btn btn-primary">Mulai Pengukuran</a>
         </div>
     @endif

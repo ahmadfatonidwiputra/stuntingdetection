@@ -252,6 +252,46 @@
         Riwayat Pengukuran
     </div>
 
+    <form method="GET" action="{{ route('measurements.anak.show', $anak) }}" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-top: 16px; padding-bottom: 16px; border-bottom: 1px dashed var(--border-glass);">
+        <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 140px;">
+            <label class="form-label" style="font-size: 12px;">Dari Tanggal</label>
+            <input type="date" name="from" class="form-input" value="{{ request('from') }}">
+        </div>
+        <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 140px;">
+            <label class="form-label" style="font-size: 12px;">Sampai Tanggal</label>
+            <input type="date" name="to" class="form-input" value="{{ request('to') }}">
+        </div>
+        <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 160px;">
+            <label class="form-label" style="font-size: 12px;">Kategori Stunting</label>
+            <select name="stunting_category" class="form-input">
+                <option value="">Semua Kategori</option>
+                <option value="Normal" {{ request('stunting_category') === 'Normal' ? 'selected' : '' }}>Normal</option>
+                <option value="Stunting" {{ request('stunting_category') === 'Stunting' ? 'selected' : '' }}>Stunting</option>
+                <option value="Sangat Stunting" {{ request('stunting_category') === 'Sangat Stunting' ? 'selected' : '' }}>Sangat Stunting</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 170px;">
+            <label class="form-label" style="font-size: 12px;">Status Gizi (Permenkes)</label>
+            <select name="gizi_status" class="form-input">
+                <option value="">Semua</option>
+                <option value="normal" {{ request('gizi_status') === 'normal' ? 'selected' : '' }}>Semua indikator normal</option>
+                <option value="bermasalah" {{ request('gizi_status') === 'bermasalah' ? 'selected' : '' }}>Ada indikator bermasalah</option>
+            </select>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-primary btn-sm">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                Filter
+            </button>
+            @if($hasHistoryFilter)
+                <a href="{{ route('measurements.anak.show', $anak) }}" class="btn btn-secondary btn-sm">Reset</a>
+            @endif
+        </div>
+    </form>
+
     @if($anak->measurements->isNotEmpty())
         <div style="overflow-x: auto; margin-top: 16px;">
             <table class="data-table">
@@ -345,8 +385,13 @@
     @else
         <div class="empty-state" style="margin-top: 16px;">
             <div class="empty-state-icon">📋</div>
-            <h3>Belum ada pengukuran untuk anak ini</h3>
-            <p>Tambahkan pengukuran pertama untuk mulai memantau perkembangannya.</p>
+            @if($hasHistoryFilter)
+                <h3>Tidak ada pengukuran yang cocok dengan filter</h3>
+                <p>Coba ubah rentang tanggal atau kategori filter yang dipilih.</p>
+            @else
+                <h3>Belum ada pengukuran untuk anak ini</h3>
+                <p>Tambahkan pengukuran pertama untuk mulai memantau perkembangannya.</p>
+            @endif
         </div>
     @endif
 </div>
