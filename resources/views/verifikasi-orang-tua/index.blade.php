@@ -48,9 +48,10 @@
     </div>
     <div class="page-sub">{{ $pending->count() }} pendaftaran menunggu verifikasi.</div>
 
-    <!-- Filter Pencarian -->
+    <!-- Filter Pencarian: Pendaftaran Menunggu -->
     <div class="request-card" style="margin-bottom: 24px; padding: 16px 20px;">
         <form method="GET" action="{{ route('verifikasi-orang-tua.index') }}" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+            <input type="hidden" name="search_verified" value="{{ request('search_verified') }}">
             <div style="flex: 1; min-width: 250px;">
                 <input type="text" name="search" class="form-input" value="{{ request('search') }}" placeholder="Cari nama akun, nama profil, email, atau NIK..." style="width: 100%; border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 10px; background: var(--bg-main); color: var(--text);">
             </div>
@@ -59,7 +60,7 @@
                     🔍 Cari
                 </button>
                 @if(request('search'))
-                    <a href="{{ route('verifikasi-orang-tua.index') }}" class="btn-reject" style="padding: 10px 20px; text-decoration: none; color: var(--text-secondary); background: var(--bg-main); border: 1px solid var(--glass-border);">Reset</a>
+                    <a href="{{ route('verifikasi-orang-tua.index', ['search_verified' => request('search_verified')]) }}" class="btn-reject" style="padding: 10px 20px; text-decoration: none; color: var(--text-secondary); background: var(--bg-main); border: 1px solid var(--glass-border);">Reset</a>
                 @endif
             </div>
         </form>
@@ -133,10 +134,34 @@
         <div class="page-sub">Daftar orang tua yang aktif di posyandu Anda</div>
     </div>
 
+    <!-- Filter Pencarian: Sudah Terverifikasi -->
+    <div class="request-card" style="margin-bottom: 24px; padding: 16px 20px;">
+        <form method="GET" action="{{ route('verifikasi-orang-tua.index') }}" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+            <input type="hidden" name="search" value="{{ request('search') }}">
+            <div style="flex: 1; min-width: 250px;">
+                <input type="text" name="search_verified" class="form-input" value="{{ request('search_verified') }}" placeholder="Cari nama, email, atau NIK orang tua terverifikasi..." style="width: 100%; border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 10px; background: var(--bg-main); color: var(--text);">
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" class="btn-approve" style="padding: 10px 20px;">
+                    🔍 Cari
+                </button>
+                @if(request('search_verified'))
+                    <a href="{{ route('verifikasi-orang-tua.index', ['search' => request('search')]) }}" class="btn-reject" style="padding: 10px 20px; text-decoration: none; color: var(--text-secondary); background: var(--bg-main); border: 1px solid var(--glass-border);">Reset</a>
+                @endif
+            </div>
+        </form>
+    </div>
+
     @if($verified->isEmpty())
     <div class="empty-state">
         <div style="font-size: 40px; margin-bottom: 14px;">👥</div>
-        <div style="font-size: 16px; font-weight: 600;">Belum ada orang tua terverifikasi.</div>
+        <div style="font-size: 16px; font-weight: 600;">
+            @if(request('search_verified'))
+                Tidak ada orang tua terverifikasi yang cocok dengan pencarian.
+            @else
+                Belum ada orang tua terverifikasi.
+            @endif
+        </div>
     </div>
     @else
         @foreach($verified as $user)

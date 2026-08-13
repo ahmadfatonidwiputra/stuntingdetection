@@ -18,26 +18,33 @@ class VerifikasiOrangTuaController extends Controller
     {
         $user = auth()->user();
         $search = strtolower(trim($request->query('search')));
+        $searchVerified = strtolower(trim($request->query('search_verified')));
 
         $queryPending = User::orangTua()
             ->where('status', 'pending')
             ->with(['orangTuaProfile.anakRelations.anak.posyandu']);
-            
+
         $queryVerified = User::orangTua()
             ->whereIn('status', ['active', 'suspended'])
             ->with(['orangTuaProfile.anakRelations.anak.posyandu']);
 
-        if ($search) {
-            $searchClosure = function($q) use ($search) {
-                $q->whereRaw('lower(name) like ?', ['%' . $search . '%'])
-                  ->orWhereRaw('lower(email) like ?', ['%' . $search . '%'])
-                  ->orWhereHas('orangTuaProfile', function($pQ) use ($search) {
-                      $pQ->whereRaw('lower(nama_lengkap) like ?', ['%' . $search . '%'])
-                         ->orWhereRaw('lower(nik) like ?', ['%' . $search . '%']);
+        $makeSearchClosure = function($term) {
+            return function($q) use ($term) {
+                $q->whereRaw('lower(name) like ?', ['%' . $term . '%'])
+                  ->orWhereRaw('lower(email) like ?', ['%' . $term . '%'])
+                  ->orWhereHas('orangTuaProfile', function($pQ) use ($term) {
+                      $pQ->whereRaw('lower(nama_lengkap) like ?', ['%' . $term . '%'])
+                         ->orWhereRaw('lower(nik) like ?', ['%' . $term . '%']);
                   });
             };
-            $queryPending->where($searchClosure);
-            $queryVerified->where($searchClosure);
+        };
+
+        if ($search) {
+            $queryPending->where($makeSearchClosure($search));
+        }
+
+        if ($searchVerified) {
+            $queryVerified->where($makeSearchClosure($searchVerified));
         }
 
         // Petugas hanya lihat yang terhubung ke posyanduny
