@@ -226,10 +226,27 @@ class SuperAdminController extends Controller
 
     // ── CRUD Posyandu ─────────────────────────────────
 
-    public function posyanduIndex()
+    public function posyanduIndex(Request $request)
     {
-        $posyandu = Posyandu::withCount(['petugas', 'anak'])->latest()->paginate(15);
-        return view('super-admin.posyandu.index', compact('posyandu'));
+        $search = $request->get('search');
+        $status = $request->get('status');
+
+        $posyandu = Posyandu::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('nama', 'like', "%{$search}%")
+                        ->orWhere('kode_posyandu', 'like', "%{$search}%")
+                        ->orWhere('kota', 'like', "%{$search}%")
+                        ->orWhere('kecamatan', 'like', "%{$search}%");
+                });
+            })
+            ->when($status, fn ($query) => $query->where('status', $status))
+            ->withCount(['petugas', 'anak'])
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('super-admin.posyandu.index', compact('posyandu', 'search', 'status'));
     }
 
     public function posyanduCreate()
