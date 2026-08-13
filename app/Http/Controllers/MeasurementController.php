@@ -81,13 +81,19 @@ class MeasurementController extends Controller
 
         $anakList = $query->paginate(10)->withQueryString();
 
-        return view('measurements.index', [
+        $viewData = [
             'anakList' => $anakList,
             'hasDateFilter' => $hasMeasurementFilter,
             'hasCategoryFilter' => $hasCategoryFilter,
             'sortField' => $sortField,
             'sortDirection' => $sortDirection,
-        ]);
+        ];
+
+        if ($request->ajax()) {
+            return view('measurements.partials.index-table', $viewData);
+        }
+
+        return view('measurements.index', $viewData);
     }
 
     public function create(Request $request)
@@ -265,11 +271,18 @@ class MeasurementController extends Controller
 
         $anak->setRelation('measurements', $sorted);
 
-        return view('measurements.anak-show', [
+        $viewData = [
             'anak' => $anak,
             'hasHistoryFilter' => $hasHistoryFilter,
             'sortField' => $sortField,
             'sortDirection' => $sortDirection,
+        ];
+
+        if ($request->ajax()) {
+            return view('measurements.partials.history-table', $viewData);
+        }
+
+        return view('measurements.anak-show', $viewData + [
             'latestMeasurement' => $anak->latestMeasurement,
         ]);
     }
