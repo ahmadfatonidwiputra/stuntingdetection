@@ -121,6 +121,28 @@
                 <p id="uploadDuration" style="flex-basis: 100%; font-size: 11px; color: var(--text-muted); text-align: center; margin: 0;"></p>
             </div>
 
+            <!-- Ukur Manual untuk Perbandingan dengan hasil ML -->
+            <div id="manualCompareSection" style="display:none; margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--glass-border);">
+                <p style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px;">📏 Ukur Manual untuk Perbandingan (opsional)</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 12px;">Tinggi Manual (cm)</label>
+                        <input type="number" name="manual_height_cm" id="manualHeightInput" class="form-input" step="0.01" min="30" max="150" placeholder="Hasil ukur alat manual">
+                        @error('manual_height_cm')
+                            <p class="form-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 12px;">Berat Manual (kg)</label>
+                        <input type="number" name="manual_weight_kg" id="manualWeightInput" class="form-input" step="0.01" min="1" max="50" placeholder="Hasil timbangan manual">
+                        @error('manual_weight_kg')
+                            <p class="form-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+                <p id="manualCompareResult" style="font-size: 12px; color: var(--text-muted); margin-top: 8px;"></p>
+            </div>
+
             <!-- Status Gizi (Z-Score BB/U, PB/U-TB/U, BB/PB-BB/TB, IMT/U) -->
             <div id="antropometriResult" style="display:none; margin-top: 16px;">
                 <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px; font-weight: 600;">📊 Status Gizi (berdasarkan data anak terpilih)</p>
@@ -273,6 +295,8 @@
 @push('scripts')
 <script>
 let stream = null;
+let lastMlHeight = null;
+let lastMlWeight = null;
 const PREDICT_URL = '{{ route("measurements.predict") }}';
 const WARMUP_URL = '{{ route("measurements.warmup") }}';
 const ANTROPOMETRI_URL = '{{ route("measurements.antropometri") }}';
@@ -600,6 +624,10 @@ async function sendToMLApi(imageBlob, isRetry = false) {
         }
 
         document.getElementById('estimationResult').style.display = 'flex';
+        document.getElementById('manualCompareSection').style.display = 'block';
+        lastMlHeight = data.height_cm ?? null;
+        lastMlWeight = data.weight_kg ?? null;
+        updateManualCompare();
 
         if (data.height_cm !== null && data.height_cm !== undefined && data.weight_kg !== null && data.weight_kg !== undefined) {
             fetchAntropometri(data.height_cm, data.weight_kg);
@@ -686,18 +714,46 @@ async function fetchAntropometri(heightCm, weightKg) {
     }
 }
 
+// Compare the petugas's manual measurement against the ML estimate as they type,
+// so they can see the discrepancy immediately instead of only after saving.
+function updateManualCompare() {
+    const resultEl = document.getElementById('manualCompareResult');
+    const manualHeight = parseFloat(document.getElementById('manualHeightInput').value);
+    const manualWeight = parseFloat(document.getElementById('manualWeightInput').value);
+
+    const parts = [];
+    if (!isNaN(manualHeight) && lastMlHeight !== null) {
+        const diff = (manualHeight - lastMlHeight).toFixed(2);
+        parts.push(`Selisih tinggi: ${diff > 0 ? '+' : ''}${diff} cm`);
+    }
+    if (!isNaN(manualWeight) && lastMlWeight !== null) {
+        const diff = (manualWeight - lastMlWeight).toFixed(2);
+        parts.push(`Selisih berat: ${diff > 0 ? '+' : ''}${diff} kg`);
+    }
+    resultEl.textContent = parts.join(' • ');
+}
+
+document.getElementById('manualHeightInput').addEventListener('input', updateManualCompare);
+document.getElementById('manualWeightInput').addEventListener('input', updateManualCompare);
+
 function resetCamera() {
     document.getElementById('capturedPhoto').style.display = 'none';
     document.getElementById('cameraCanvas').style.display = 'none';
     document.getElementById('photoBase64').value = '';
     document.getElementById('estimationResult').style.display = 'none';
+    document.getElementById('manualCompareSection').style.display = 'none';
     document.getElementById('btnReset').style.display = 'none';
     document.getElementById('btnStartCamera').style.display = 'inline-flex';
     document.getElementById('cameraVideo').style.display = 'block';
     document.getElementById('photoUpload').value = '';
     document.getElementById('heightInput').value = '';
     document.getElementById('weightInput').value = '';
+    document.getElementById('manualHeightInput').value = '';
+    document.getElementById('manualWeightInput').value = '';
+    document.getElementById('manualCompareResult').textContent = '';
     document.getElementById('posePhotoBase64').value = '';
+    lastMlHeight = null;
+    lastMlWeight = null;
 }
 
 // Prevent duplicate rows from double-clicking/double-tapping submit while

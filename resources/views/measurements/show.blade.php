@@ -83,6 +83,30 @@
                 </div>
             </div>
 
+            @if($measurement->manual_height_cm || $measurement->manual_weight_kg)
+                <div style="margin-top: 12px; padding: 14px; background: var(--bg-glass); border-radius: var(--radius-sm); border: 1px dashed var(--border-glass);">
+                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600;">📏 Hasil Ukur Manual (Pembanding)</div>
+                    <div class="detail-row">
+                        <span class="detail-row-label">Tinggi Manual</span>
+                        <span class="detail-row-value">
+                            {{ $measurement->manual_height_cm ? number_format($measurement->manual_height_cm, 2) . ' cm' : '-' }}
+                            @if($measurement->manual_height_cm)
+                                <span style="color: var(--text-muted); font-size: 12px;">(selisih {{ $measurement->manual_height_cm > $measurement->height_cm ? '+' : '' }}{{ number_format($measurement->manual_height_cm - $measurement->height_cm, 2) }} cm)</span>
+                            @endif
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-row-label">Berat Manual</span>
+                        <span class="detail-row-value">
+                            {{ $measurement->manual_weight_kg ? number_format($measurement->manual_weight_kg, 2) . ' kg' : '-' }}
+                            @if($measurement->manual_weight_kg)
+                                <span style="color: var(--text-muted); font-size: 12px;">(selisih {{ $measurement->manual_weight_kg > $measurement->weight_kg ? '+' : '' }}{{ number_format($measurement->manual_weight_kg - $measurement->weight_kg, 2) }} kg)</span>
+                            @endif
+                        </span>
+                    </div>
+                </div>
+            @endif
+
             <div style="text-align: center; padding: 20px; background: var(--bg-glass); border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
                 <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Z-Score (TB/U)</div>
                 <div style="font-size: 42px; font-weight: 800; background: var(--gradient-3); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">

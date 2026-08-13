@@ -19,6 +19,8 @@ class Measurement extends Model
         'gender',
         'height_cm',
         'weight_kg',
+        'manual_height_cm',
+        'manual_weight_kg',
         'z_score',
         'stunting_category',
         'photo_path',
@@ -31,6 +33,8 @@ class Measurement extends Model
         'birth_date' => 'date',
         'height_cm' => 'decimal:2',
         'weight_kg' => 'decimal:2',
+        'manual_height_cm' => 'decimal:2',
+        'manual_weight_kg' => 'decimal:2',
         'z_score' => 'decimal:2',
         'measured_at' => 'datetime',
     ];

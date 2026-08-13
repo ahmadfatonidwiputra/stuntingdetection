@@ -282,8 +282,18 @@
                                 <div>{{ $measurement->measured_at->translatedFormat('d M Y') }}</div>
                                 <div style="font-size: 11px; color: var(--text-muted);">{{ $measurement->measured_at->format('H:i') }}</div>
                             </td>
-                            <td><strong>{{ number_format($measurement->height_cm, 2) }}</strong> <span style="color: var(--text-muted);">cm</span></td>
-                            <td><strong>{{ number_format($measurement->weight_kg, 2) }}</strong> <span style="color: var(--text-muted);">kg</span></td>
+                            <td>
+                                <strong>{{ number_format($measurement->height_cm, 2) }}</strong> <span style="color: var(--text-muted);">cm</span>
+                                @if($measurement->manual_height_cm)
+                                    <div style="font-size: 11px; color: var(--text-muted);">Manual: {{ number_format($measurement->manual_height_cm, 2) }} cm</div>
+                                @endif
+                            </td>
+                            <td>
+                                <strong>{{ number_format($measurement->weight_kg, 2) }}</strong> <span style="color: var(--text-muted);">kg</span>
+                                @if($measurement->manual_weight_kg)
+                                    <div style="font-size: 11px; color: var(--text-muted);">Manual: {{ number_format($measurement->manual_weight_kg, 2) }} kg</div>
+                                @endif
+                            </td>
                             <td><strong>{{ number_format($measurement->z_score, 2) }}</strong></td>
                             <td>
                                 <span class="badge badge-{{ strtolower(str_replace(' ', '-', $measurement->stunting_category)) }}">
