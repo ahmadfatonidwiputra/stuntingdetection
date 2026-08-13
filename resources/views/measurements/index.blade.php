@@ -1,5 +1,31 @@
 @extends('layouts.main')
 
+@php
+    $sortLink = function (string $field) use ($sortField, $sortDirection) {
+        $nextDirection = ($sortField === $field && $sortDirection === 'asc') ? 'desc' : 'asc';
+        $query = array_merge(request()->except(['sort', 'direction', 'page']), [
+            'sort' => $field,
+            'direction' => $nextDirection,
+        ]);
+
+        return [
+            'url' => request()->url() . '?' . http_build_query($query),
+            'arrow' => $sortField === $field ? ($sortDirection === 'asc' ? '▲' : '▼') : '',
+        ];
+    };
+@endphp
+
+@push('styles')
+<style>
+    .sortable-th a {
+        display: inline-flex; align-items: center; gap: 4px;
+        color: inherit; text-decoration: none; cursor: pointer;
+    }
+    .sortable-th a:hover { color: var(--text-primary); }
+    .sortable-th .sort-arrow { font-size: 9px; color: var(--accent-blue); }
+</style>
+@endpush
+
 @section('content')
 <div class="page-header flex-between">
     <div>
@@ -68,12 +94,18 @@
         <div style="overflow-x: auto;">
             <table class="data-table">
                 <thead>
+                    @php
+                        $sortNama = $sortLink('nama');
+                        $sortJumlah = $sortLink('jumlah');
+                        $sortTanggal = $sortLink('tanggal');
+                        $sortStatus = $sortLink('status');
+                    @endphp
                     <tr>
                         <th>No</th>
-                        <th>Anak</th>
-                        <th>Jumlah Pengukuran</th>
-                        <th>Pengukuran Terakhir</th>
-                        <th>Status Terakhir</th>
+                        <th class="sortable-th"><a href="{{ $sortNama['url'] }}">Anak <span class="sort-arrow">{{ $sortNama['arrow'] }}</span></a></th>
+                        <th class="sortable-th"><a href="{{ $sortJumlah['url'] }}">Jumlah Pengukuran <span class="sort-arrow">{{ $sortJumlah['arrow'] }}</span></a></th>
+                        <th class="sortable-th"><a href="{{ $sortTanggal['url'] }}">Pengukuran Terakhir <span class="sort-arrow">{{ $sortTanggal['arrow'] }}</span></a></th>
+                        <th class="sortable-th"><a href="{{ $sortStatus['url'] }}">Status Terakhir <span class="sort-arrow">{{ $sortStatus['arrow'] }}</span></a></th>
                         <th>Aksi</th>
                     </tr>
                 </thead>

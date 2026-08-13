@@ -68,13 +68,35 @@
             height: 300px;
         }
     }
+
+    .sortable-th a {
+        display: inline-flex; align-items: center; gap: 4px;
+        color: inherit; text-decoration: none; cursor: pointer;
+    }
+    .sortable-th a:hover { color: var(--text-primary); }
+    .sortable-th .sort-arrow { font-size: 9px; color: var(--accent-blue); }
 </style>
 @endpush
 
 @section('content')
 @php
+    $historySortLink = function (string $field) use ($sortField, $sortDirection) {
+        $nextDirection = ($sortField === $field && $sortDirection === 'asc') ? 'desc' : 'asc';
+        $query = array_merge(request()->except(['sort', 'direction']), [
+            'sort' => $field,
+            'direction' => $nextDirection,
+        ]);
+
+        return [
+            'url' => request()->url() . '?' . http_build_query($query),
+            'arrow' => $sortField === $field ? ($sortDirection === 'asc' ? '▲' : '▼') : '',
+        ];
+    };
+
     $photoMeasurement = $anak->latestPhotoMeasurement;
-    $chartPoints = $anak->measurements->map(fn ($measurement) => [
+    // Chart always reads chronologically regardless of how the table below is sorted,
+    // otherwise the growth line would zig-zag when a petugas sorts the table by height/weight/etc.
+    $chartPoints = $anak->measurements->sortBy('measured_at')->values()->map(fn ($measurement) => [
         'label' => $measurement->measured_at->translatedFormat('d M Y'),
         'height' => (float) $measurement->height_cm,
         'weight' => (float) $measurement->weight_kg,
@@ -221,11 +243,11 @@
             </div>
         </div>
         <div class="growth-chart-meta">
-            <span>{{ $anak->measurements->count() }} titik data</span>
+            <span>{{ $chartPoints->count() }} titik data</span>
             <span>•</span>
-            <span>{{ $anak->measurements->first()?->measured_at?->translatedFormat('d M Y') }}</span>
+            <span>{{ $chartPoints->first()['label'] ?? '-' }}</span>
             <span>s/d</span>
-            <span>{{ $anak->measurements->last()?->measured_at?->translatedFormat('d M Y') }}</span>
+            <span>{{ $chartPoints->last()['label'] ?? '-' }}</span>
         </div>
     </div>
 
@@ -296,17 +318,28 @@
         <div style="overflow-x: auto; margin-top: 16px;">
             <table class="data-table">
                 <thead>
+                    @php
+                        $sortTanggal = $historySortLink('tanggal');
+                        $sortTinggi = $historySortLink('tinggi');
+                        $sortBerat = $historySortLink('berat');
+                        $sortZscore = $historySortLink('zscore');
+                        $sortStatus = $historySortLink('status');
+                        $sortBbU = $historySortLink('bb_u');
+                        $sortBbPbTb = $historySortLink('bb_pb_tb');
+                        $sortImtU = $historySortLink('imt_u');
+                        $sortPetugas = $historySortLink('petugas');
+                    @endphp
                     <tr>
                         <th>No</th>
-                        <th>Tanggal</th>
-                        <th>Tinggi</th>
-                        <th>Berat</th>
-                        <th>Z-Score</th>
-                        <th>Status</th>
-                        <th>BB/U</th>
-                        <th>BB/PB atau BB/TB</th>
-                        <th>IMT/U</th>
-                        <th>Petugas</th>
+                        <th class="sortable-th"><a href="{{ $sortTanggal['url'] }}">Tanggal <span class="sort-arrow">{{ $sortTanggal['arrow'] }}</span></a></th>
+                        <th class="sortable-th"><a href="{{ $sortTinggi['url'] }}">Tinggi <span class="sort-arrow">{{ $sortTinggi['arrow'] }}</span></a></th>
+                        <th class="sortable-th"><a href="{{ $sortBerat['url'] }}">Berat <span class="sort-arrow">{{ $sortBerat['arrow'] }}</span></a></th>
+                        <th class="sortable-th"><a href="{{ $sortZscore['url'] }}">Z-Score <span class="sort-arrow">{{ $sortZscore['arrow'] }}</span></a></th>
+                        <th class="sortable-th"><a href="{{ $sortStatus['url'] }}">Status <span class="sort-arrow">{{ $sortStatus['arrow'] }}</span></a></th>
+                        <th class="sortable-th"><a href="{{ $sortBbU['url'] }}">BB/U <span class="sort-arrow">{{ $sortBbU['arrow'] }}</span></a></th>
+                        <th class="sortable-th"><a href="{{ $sortBbPbTb['url'] }}">BB/PB atau BB/TB <span class="sort-arrow">{{ $sortBbPbTb['arrow'] }}</span></a></th>
+                        <th class="sortable-th"><a href="{{ $sortImtU['url'] }}">IMT/U <span class="sort-arrow">{{ $sortImtU['arrow'] }}</span></a></th>
+                        <th class="sortable-th"><a href="{{ $sortPetugas['url'] }}">Petugas <span class="sort-arrow">{{ $sortPetugas['arrow'] }}</span></a></th>
                         <th>Aksi</th>
                     </tr>
                 </thead>

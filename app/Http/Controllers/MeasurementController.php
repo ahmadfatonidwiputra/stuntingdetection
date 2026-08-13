@@ -34,6 +34,18 @@ class MeasurementController extends Controller
             ->latest('measured_at')
             ->limit(1);
 
+        $latestStuntingCategorySubquery = Measurement::query()
+            ->select('stunting_category')
+            ->whereColumn('anak_id', 'anak.id')
+            ->tap($applyMeasurementFilters)
+            ->latest('measured_at')
+            ->limit(1);
+
+        $sortField = in_array($request->get('sort'), ['nama', 'jumlah', 'tanggal', 'status'])
+            ? $request->get('sort')
+            : 'tanggal';
+        $sortDirection = $request->get('direction') === 'asc' ? 'asc' : 'desc';
+
         $query = Anak::query()
             ->when(
                 $posyanduId,
@@ -52,7 +64,10 @@ class MeasurementController extends Controller
             ->withCount([
                 'measurements as filtered_measurements_count' => $applyMeasurementFilters,
             ])
-            ->orderByDesc($latestMeasuredAtSubquery)
+            ->when($sortField === 'nama', fn (Builder $query) => $query->orderBy('nama', $sortDirection))
+            ->when($sortField === 'jumlah', fn (Builder $query) => $query->orderBy('filtered_measurements_count', $sortDirection))
+            ->when($sortField === 'tanggal', fn (Builder $query) => $query->orderBy($latestMeasuredAtSubquery, $sortDirection))
+            ->when($sortField === 'status', fn (Builder $query) => $query->orderBy($latestStuntingCategorySubquery, $sortDirection))
             ->orderBy('nama');
 
         if ($hasMeasurementFilter) {
@@ -70,6 +85,8 @@ class MeasurementController extends Controller
             'anakList' => $anakList,
             'hasDateFilter' => $hasMeasurementFilter,
             'hasCategoryFilter' => $hasCategoryFilter,
+            'sortField' => $sortField,
+            'sortDirection' => $sortDirection,
         ]);
     }
 
@@ -228,9 +245,31 @@ class MeasurementController extends Controller
         $hasHistoryFilter = $request->filled('from') || $request->filled('to')
             || $request->filled('stunting_category') || $request->filled('gizi_status');
 
+        $sortableFields = ['tanggal', 'tinggi', 'berat', 'zscore', 'status', 'bb_u', 'bb_pb_tb', 'imt_u', 'petugas'];
+        $sortField = in_array($request->get('sort'), $sortableFields) ? $request->get('sort') : 'tanggal';
+        $sortDirection = $request->get('direction') === 'desc' ? 'desc' : 'asc';
+
+        $sorted = $anak->measurements->sortBy(function ($measurement) use ($sortField) {
+            return match ($sortField) {
+                'tinggi' => (float) $measurement->height_cm,
+                'berat' => (float) $measurement->weight_kg,
+                'zscore' => (float) $measurement->z_score,
+                'status' => $measurement->stunting_category,
+                'bb_u' => $measurement->antropometriLengkap()['bb_u']['z'] ?? null,
+                'bb_pb_tb' => $measurement->antropometriLengkap()['bb_pb_tb']['z'] ?? null,
+                'imt_u' => $measurement->antropometriLengkap()['imt_u']['z'] ?? null,
+                'petugas' => $measurement->user?->name,
+                default => $measurement->measured_at,
+            };
+        }, SORT_REGULAR, $sortDirection === 'desc')->values();
+
+        $anak->setRelation('measurements', $sorted);
+
         return view('measurements.anak-show', [
             'anak' => $anak,
             'hasHistoryFilter' => $hasHistoryFilter,
+            'sortField' => $sortField,
+            'sortDirection' => $sortDirection,
             'latestMeasurement' => $anak->latestMeasurement,
         ]);
     }
