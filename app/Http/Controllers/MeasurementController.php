@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ExportsMeasurementsCsv;
 use App\Models\Anak;
 use App\Models\Measurement;
 use App\Services\AntropometriService;
@@ -13,9 +14,12 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MeasurementController extends Controller
 {
+    use ExportsMeasurementsCsv;
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -285,6 +289,47 @@ class MeasurementController extends Controller
         return view('measurements.anak-show', $viewData + [
             'latestMeasurement' => $anak->latestMeasurement,
         ]);
+    }
+
+    public function downloadAnak(Anak $anak, Request $request): StreamedResponse
+    {
+        $this->ensureCanAccessAnak($anak);
+
+        $anak->load([
+            'posyandu',
+            'measurements' => fn ($query) => $query
+                ->with(['anak', 'user.petugasProfile'])
+                ->when($request->filled('stunting_category'), fn ($q) => $q->where('stunting_category', $request->stunting_category))
+                ->tap(fn ($q) => $this->applyDateFilters($q, $request))
+                ->orderBy('measured_at'),
+        ]);
+
+        if ($request->filled('gizi_status')) {
+            $anak->setRelation('measurements', $anak->measurements->filter(function ($measurement) use ($request) {
+                $antro = $measurement->antropometriLengkap();
+                if (! $antro) {
+                    return false;
+                }
+
+                $hasIssue = collect(['bb_u', 'pb_tb_u', 'bb_pb_tb', 'imt_u'])
+                    ->contains(fn ($key) => ($antro[$key]['severity'] ?? 'normal') !== 'normal');
+
+                return $request->gizi_status === 'bermasalah' ? $hasIssue : ! $hasIssue;
+            })->values());
+        }
+
+        $periodLabel = $request->filled('from') || $request->filled('to')
+            ? trim(($request->get('from') ?: 'awal') . ' s/d ' . ($request->get('to') ?: 'sekarang'))
+            : 'Seluruh Riwayat';
+
+        $filename = 'laporan-' . Str::slug($anak->nama) . '-' . now()->format('Ymd-His') . '.csv';
+
+        return $this->streamMeasurementsCsv(
+            $anak->measurements,
+            $filename,
+            $anak->posyandu?->nama ?? '-',
+            $periodLabel
+        );
     }
 
     public function show(Measurement $measurement)
