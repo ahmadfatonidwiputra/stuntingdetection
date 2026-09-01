@@ -11,12 +11,12 @@
     <title>@yield('title', 'AI Stunt Detect - Deteksi Dini Stunting Berbasis AI')</title>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
+    <link rel="icon" type="image/png" href="{{ versioned_asset('logo.png') }}">
 
     <!-- Open Graph / WhatsApp Meta Tags -->
     <meta property="og:title" content="AI Stunt Detect - Deteksi Dini Stunting Berbasis AI" />
     <meta property="og:description" content="AI Stunt Detect - Sistem deteksi dini stunting berbasis AI untuk posyandu Indonesia. Pantau pertumbuhan anak dengan teknologi kecerdasan buatan." />
-    <meta property="og:image" content="{{ asset('logo.png') }}" />
+    <meta property="og:image" content="{{ versioned_asset('logo.png') }}" />
     <meta property="og:url" content="{{ url()->current() }}" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="AI Stunt Detect" />
@@ -574,7 +574,7 @@
         <nav class="navbar" id="navbar">
             <div class="nav-container">
                 <a href="{{ route('home') }}" class="nav-brand">
-                    <img src="{{ asset('logo.png') }}" alt="Logo" style="height: 40px; width: auto;" />
+                    <img src="{{ versioned_asset('logo.png') }}" alt="Logo" style="height: 40px; width: auto;" />
                     <span class="nav-brand-text">AI Stunt Detect</span>
                 </a>
 
@@ -663,7 +663,7 @@
             <div class="footer-inner">
                 <div class="footer-brand">
                     <a href="{{ route('home') }}" class="nav-brand">
-                        <img src="{{ asset('logo.png') }}" alt="Logo" style="height: 40px; width: auto;" />
+                        <img src="{{ versioned_asset('logo.png') }}" alt="Logo" style="height: 40px; width: auto;" />
                         <span class="nav-brand-text">AI Stunt Detect</span>
                     </a>
                     <p>Sistem deteksi dini stunting berbasis kecerdasan buatan untuk mendukung program posyandu di
