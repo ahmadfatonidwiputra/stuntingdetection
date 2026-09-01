@@ -15,9 +15,16 @@ use App\Http\Controllers\VerifikasiOrangTuaController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public Landing Pages ───────────────────────────
-Route::get('/', [LandingController::class, 'home'])->name('home');
-Route::get('/tentang-stunting', [LandingController::class, 'tentangStunting'])->name('tentang-stunting');
-Route::get('/layanan', [LandingController::class, 'layanan'])->name('layanan');
+// Konten murni statis (tanpa query DB, tanpa form) & jarang berubah, jadi
+// browser boleh menyimpan cache-nya sendiri selama 1 jam sebelum revalidasi.
+// "private" (bukan "public") karena layout ikut menyisipkan csrf-token &
+// tautan navigasi yang beda untuk user login, jadi tidak boleh dibagi ke
+// cache bersama/CDN.
+Route::middleware('cache.headers:private;max_age=3600;etag;must_revalidate')->group(function () {
+    Route::get('/', [LandingController::class, 'home'])->name('home');
+    Route::get('/tentang-stunting', [LandingController::class, 'tentangStunting'])->name('tentang-stunting');
+    Route::get('/layanan', [LandingController::class, 'layanan'])->name('layanan');
+});
 Route::get('/kalkulator-antropometri', [LandingController::class, 'kalkulatorAntropometri'])->name('kalkulator-antropometri');
 
 // ── Petugas Registration (public) ──────────────────

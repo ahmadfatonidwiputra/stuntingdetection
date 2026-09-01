@@ -403,7 +403,7 @@
             <button type="button" class="antro-tab" data-antro-gender="P">Anak Perempuan</button>
         </div>
 
-        @foreach(['L' => $tabelBoys, 'P' => $tabelGirls] as $genderKey => $tabel)
+        @foreach(['L', 'P'] as $genderKey)
             <div class="antro-gender-panel" data-antro-gender-panel="{{ $genderKey }}" style="{{ $genderKey === 'P' ? 'display:none;' : '' }}">
                 <div class="antro-subtabs" data-antro-indikator-tabs="{{ $genderKey }}">
                     <button type="button" class="antro-subtab active" data-antro-indikator="bb_u">BB/U</button>
@@ -413,21 +413,12 @@
                     <button type="button" class="antro-subtab" data-antro-indikator="imt_u">IMT/U</button>
                 </div>
 
-                <div class="antro-indikator-panel" data-antro-indikator-panel="bb_u">
-                    @include('antropometri.partials.tabel-standar', ['rows' => $tabel['bb_u'], 'keyLabel' => 'Umur (bulan)'])
-                </div>
-                <div class="antro-indikator-panel" data-antro-indikator-panel="pb_tb_u" style="display:none;">
-                    @include('antropometri.partials.tabel-standar', ['rows' => $tabel['pb_tb_u'], 'keyLabel' => 'Umur (bulan)'])
-                </div>
-                <div class="antro-indikator-panel" data-antro-indikator-panel="bb_pb" style="display:none;">
-                    @include('antropometri.partials.tabel-standar', ['rows' => $tabel['bb_pb'], 'keyLabel' => 'Panjang Badan (cm)'])
-                </div>
-                <div class="antro-indikator-panel" data-antro-indikator-panel="bb_tb" style="display:none;">
-                    @include('antropometri.partials.tabel-standar', ['rows' => $tabel['bb_tb'], 'keyLabel' => 'Tinggi Badan (cm)'])
-                </div>
-                <div class="antro-indikator-panel" data-antro-indikator-panel="imt_u" style="display:none;">
-                    @include('antropometri.partials.tabel-standar', ['rows' => $tabel['imt_u'], 'keyLabel' => 'Umur (bulan)'])
-                </div>
+                {{-- Isi tabel dimuat via JS dari /data/growth/*.json (aset JSON ter-cache), bukan dirender di server --}}
+                <div class="antro-indikator-panel" data-antro-indikator-panel="bb_u"></div>
+                <div class="antro-indikator-panel" data-antro-indikator-panel="pb_tb_u" style="display:none;"></div>
+                <div class="antro-indikator-panel" data-antro-indikator-panel="bb_pb" style="display:none;"></div>
+                <div class="antro-indikator-panel" data-antro-indikator-panel="bb_tb" style="display:none;"></div>
+                <div class="antro-indikator-panel" data-antro-indikator-panel="imt_u" style="display:none;"></div>
             </div>
         @endforeach
 
@@ -476,13 +467,100 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Tabel rujukan WHO (LMS) tidak lagi dirender di server; dimuat dari
+    // aset JSON statis (/data/growth/*.json, di-cache 1 tahun oleh browser)
+    // hanya untuk panel yang benar-benar dibuka, lalu di-cache di memori JS
+    // supaya tidak fetch ulang saat user bolak-balik tab.
+    const GROWTH_SOURCES = {
+        bb_u: { file: 'wfa', keyLabel: 'Umur (bulan)' },
+        pb_tb_u: { file: 'lhfa', keyLabel: 'Umur (bulan)' },
+        bb_pb: { file: 'wfl', keyLabel: 'Panjang Badan (cm)' },
+        bb_tb: { file: 'wfh', keyLabel: 'Tinggi Badan (cm)' },
+        imt_u: { file: 'bmifa', keyLabel: 'Umur (bulan)' },
+    };
+
+    const growthFileCache = {};
+
+    function loadGrowthFile(file) {
+        if (!growthFileCache[file]) {
+            growthFileCache[file] = fetch('/data/growth/' + file + '.json').then(function (res) {
+                if (!res.ok) {
+                    throw new Error('Gagal memuat data ' + file);
+                }
+                return res.json();
+            });
+        }
+        return growthFileCache[file];
+    }
+
+    function formatSd(value) {
+        return Number(value).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    }
+
+    function formatKey(key) {
+        const n = Number(key);
+        return Number.isInteger(n) ? String(n) : key;
+    }
+
+    function renderTable(panel, rows, keyLabel) {
+        let html = '<div class="antro-table-wrap"><table class="data-table antro-table"><thead><tr>'
+            + '<th>' + keyLabel + '</th><th>-3 SD</th><th>-2 SD</th><th>-1 SD</th><th>Median</th><th>+1 SD</th><th>+2 SD</th><th>+3 SD</th>'
+            + '</tr></thead><tbody>';
+
+        Object.keys(rows).forEach(function (key) {
+            const row = rows[key];
+            html += '<tr><td>' + formatKey(key) + '</td>'
+                + '<td>' + formatSd(row.SD3neg) + '</td>'
+                + '<td>' + formatSd(row.SD2neg) + '</td>'
+                + '<td>' + formatSd(row.SD1neg) + '</td>'
+                + '<td><strong>' + formatSd(row.SD0) + '</strong></td>'
+                + '<td>' + formatSd(row.SD1) + '</td>'
+                + '<td>' + formatSd(row.SD2) + '</td>'
+                + '<td>' + formatSd(row.SD3) + '</td></tr>';
+        });
+
+        html += '</tbody></table></div>';
+        panel.innerHTML = html;
+    }
+
+    function ensurePanelLoaded(panel) {
+        if (!panel || panel.dataset.loaded === '1') {
+            return;
+        }
+
+        const indikator = panel.getAttribute('data-antro-indikator-panel');
+        const genderPanel = panel.closest('[data-antro-gender-panel]');
+        const genderKey = genderPanel && genderPanel.getAttribute('data-antro-gender-panel') === 'P' ? 'girls' : 'boys';
+        const source = GROWTH_SOURCES[indikator];
+
+        if (!source) {
+            return;
+        }
+
+        panel.innerHTML = '<p style="color: var(--text-muted); font-size: 13px;">Memuat data…</p>';
+
+        loadGrowthFile(source.file).then(function (data) {
+            renderTable(panel, data[genderKey], source.keyLabel);
+            panel.dataset.loaded = '1';
+        }).catch(function () {
+            panel.innerHTML = '<p style="color: var(--text-muted); font-size: 13px;">Gagal memuat tabel data. Coba muat ulang halaman.</p>';
+        });
+    }
+
     const genderTabs = document.querySelectorAll('[data-antro-gender-tabs] .antro-tab');
     genderTabs.forEach(function (tab) {
         tab.addEventListener('click', function () {
             const gender = tab.getAttribute('data-antro-gender');
             genderTabs.forEach(t => t.classList.toggle('active', t === tab));
             document.querySelectorAll('[data-antro-gender-panel]').forEach(function (panel) {
-                panel.style.display = panel.getAttribute('data-antro-gender-panel') === gender ? 'block' : 'none';
+                const isActive = panel.getAttribute('data-antro-gender-panel') === gender;
+                panel.style.display = isActive ? 'block' : 'none';
+                if (isActive) {
+                    const activeSubtab = panel.querySelector('.antro-subtab.active');
+                    if (activeSubtab) {
+                        ensurePanelLoaded(panel.querySelector('[data-antro-indikator-panel="' + activeSubtab.getAttribute('data-antro-indikator') + '"]'));
+                    }
+                }
             });
         });
     });
@@ -494,11 +572,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 const indikator = tab.getAttribute('data-antro-indikator');
                 tabGroup.querySelectorAll('.antro-subtab').forEach(t => t.classList.toggle('active', t === tab));
                 panelWrap.querySelectorAll('[data-antro-indikator-panel]').forEach(function (panel) {
-                    panel.style.display = panel.getAttribute('data-antro-indikator-panel') === indikator ? 'block' : 'none';
+                    const isActive = panel.getAttribute('data-antro-indikator-panel') === indikator;
+                    panel.style.display = isActive ? 'block' : 'none';
+                    if (isActive) {
+                        ensurePanelLoaded(panel);
+                    }
                 });
             });
         });
     });
+
+    // Muat panel default yang tampil saat halaman pertama kali dibuka (laki-laki / BB-U).
+    ensurePanelLoaded(document.querySelector('[data-antro-gender-panel="L"] [data-antro-indikator-panel="bb_u"]'));
 });
 </script>
 @endpush
