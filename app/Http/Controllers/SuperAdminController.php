@@ -86,6 +86,11 @@ class SuperAdminController extends Controller
         $status = $request->get('status');
         $posyanduId = $request->get('posyandu_id');
         $jenisKelamin = $request->get('jenis_kelamin');
+        $kecamatan = $request->get('kecamatan');
+
+        $sortable = ['nama', 'nik_anak', 'tanggal_lahir', 'posyandu', 'status_gizi'];
+        $sort = in_array($request->get('sort'), $sortable, true) ? $request->get('sort') : 'created_at';
+        $direction = $request->get('direction') === 'asc' ? 'asc' : 'desc';
 
         $query = Anak::with(['posyandu', 'latestMeasurement']);
 
@@ -106,6 +111,10 @@ class SuperAdminController extends Controller
             $query->where('jenis_kelamin', $jenisKelamin);
         }
 
+        if ($kecamatan) {
+            $query->whereHas('posyandu', fn ($q) => $q->where('kecamatan', $kecamatan));
+        }
+
         if ($status) {
             if ($status === 'Belum Diukur') {
                 $query->whereDoesntHave('measurements');
@@ -114,9 +123,25 @@ class SuperAdminController extends Controller
             }
         }
 
-        $anak = $query->latest()->paginate(20)->withQueryString();
+        match ($sort) {
+            'posyandu' => $query->select('anak.*')
+                ->leftJoin('posyandu', 'posyandu.id', '=', 'anak.posyandu_id')
+                ->orderBy('posyandu.nama', $direction),
+            'status_gizi' => $query->orderBy(
+                Measurement::select('stunting_category')
+                    ->whereColumn('anak_id', 'anak.id')
+                    ->orderByDesc('measured_at')
+                    ->limit(1),
+                $direction
+            ),
+            'nama', 'nik_anak', 'tanggal_lahir' => $query->orderBy($sort, $direction),
+            default => $query->orderBy('anak.created_at', 'desc'),
+        };
+
+        $anak = $query->paginate(20)->withQueryString();
 
         $posyanduList = Posyandu::orderBy('nama')->get();
+        $kecamatanList = Posyandu::whereNotNull('kecamatan')->distinct()->orderBy('kecamatan')->pluck('kecamatan');
         $statusCounts = $this->anakStatusCounts();
 
         return view('super-admin.anak.index', compact(
@@ -125,8 +150,12 @@ class SuperAdminController extends Controller
             'status',
             'posyanduId',
             'jenisKelamin',
+            'kecamatan',
             'posyanduList',
-            'statusCounts'
+            'kecamatanList',
+            'statusCounts',
+            'sort',
+            'direction'
         ));
     }
 
