@@ -102,7 +102,9 @@
                 <thead>
                     <tr>
                         @foreach(['nama' => 'Nama Anak', 'nik_anak' => 'NIK'] as $col => $label)
-                            @php($s = $sortLink($col))
+                            @php
+                                $s = $sortLink($col);
+                            @endphp
                             <th>
                                 <a href="{{ $s['url'] }}" style="color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
                                     {{ $label }} <span style="font-size: 10px; opacity: {{ $s['active'] ? '1' : '0.4' }};">{{ $s['arrow'] }}</span>
@@ -110,7 +112,9 @@
                             </th>
                         @endforeach
                         <th>JK</th>
-                        @php($s = $sortLink('tanggal_lahir'))
+                        @php
+                            $s = $sortLink('tanggal_lahir');
+                        @endphp
                         <th>
                             <a href="{{ $s['url'] }}" style="color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
                                 Umur <span style="font-size: 10px; opacity: {{ $s['active'] ? '1' : '0.4' }};">{{ $s['arrow'] }}</span>
@@ -118,7 +122,9 @@
                         </th>
                         <th>Orang Tua</th>
                         @foreach(['posyandu' => 'Posyandu', 'status_gizi' => 'Status Gizi'] as $col => $label)
-                            @php($s = $sortLink($col))
+                            @php
+                                $s = $sortLink($col);
+                            @endphp
                             <th>
                                 <a href="{{ $s['url'] }}" style="color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
                                     {{ $label }} <span style="font-size: 10px; opacity: {{ $s['active'] ? '1' : '0.4' }};">{{ $s['arrow'] }}</span>
