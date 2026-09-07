@@ -147,7 +147,7 @@
                     <tr>
                         <td style="font-weight: 600;">{{ $a->nama }}</td>
                         <td style="font-size: 13px; color: var(--text-secondary);">{{ $a->nik_anak ?? '-' }}</td>
-                        <td style="font-size: 18px;">{{ $a->jenis_kelamin === 'L' ? '👦' : '👧' }}</td>
+                        <td style="font-size: 13px;">{{ $a->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan' }}</td>
                         <td style="font-size: 13px; white-space: nowrap;">{{ $a->umur['formatted'] }}</td>
                         <td style="font-size: 13px;">
                             <div>{{ $a->nama_ayah ?? '-' }}</div>

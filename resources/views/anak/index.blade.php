@@ -116,9 +116,7 @@
                             @endif
                         </td>
                         <td style="font-size: 13px;">{{ $a->umur['formatted'] }}</td>
-                        <td>
-                            <span style="font-size: 18px;">{{ $a->jenis_kelamin === 'L' ? '👦' : '👧' }}</span>
-                        </td>
+                        <td style="font-size: 13px;">{{ $a->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan' }}</td>
                         <td style="font-size: 13px;">
                             @if($a->nama_ayah || $a->nama_ibu)
                                 <div>{{ $a->nama_ayah ?? '-' }}</div>
