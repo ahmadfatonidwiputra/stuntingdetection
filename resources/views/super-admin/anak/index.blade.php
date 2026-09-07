@@ -168,11 +168,12 @@
         </div>
 
         <!-- Pagination -->
-        @if($anak->hasPages())
-            <div style="margin-top: 24px; display: flex; justify-content: center;">
-                {{ $anak->links() }}
+        <div style="margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+            <div style="font-size: 13px; color: var(--text-muted);">
+                Menampilkan {{ $anak->firstItem() ?? 0 }}–{{ $anak->lastItem() ?? 0 }} dari {{ $anak->total() }} anak
             </div>
-        @endif
+            {{ $anak->links() }}
+        </div>
     @else
         <div class="empty-state">
             <div class="empty-state-icon">👶</div>
