@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Services\AntropometriService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class Measurement extends Model
 {
@@ -47,6 +48,34 @@ class Measurement extends Model
     public function anak(): BelongsTo
     {
         return $this->belongsTo(Anak::class, 'anak_id');
+    }
+
+    // ── Photo URL accessors ──────────────────────────
+    //
+    // Photos used to be stored on the local `public` disk before the app
+    // migrated to Cloudflare R2 (`r2` disk). Older measurement rows still
+    // have photo_path values pointing at files that only exist locally, so
+    // views try the r2 URL first and fall back to the public disk URL
+    // client-side (see the onerror handlers on the <img> tags).
+
+    public function getPhotoUrlAttribute(): ?string
+    {
+        return $this->photo_path ? Storage::disk('r2')->url($this->photo_path) : null;
+    }
+
+    public function getPhotoUrlFallbackAttribute(): ?string
+    {
+        return $this->photo_path ? Storage::disk('public')->url($this->photo_path) : null;
+    }
+
+    public function getPosePhotoUrlAttribute(): ?string
+    {
+        return $this->pose_photo_path ? Storage::disk('r2')->url($this->pose_photo_path) : null;
+    }
+
+    public function getPosePhotoUrlFallbackAttribute(): ?string
+    {
+        return $this->pose_photo_path ? Storage::disk('public')->url($this->pose_photo_path) : null;
     }
 
     public static function calculateZScore(float $heightCm, int $ageMonths, string $gender): float

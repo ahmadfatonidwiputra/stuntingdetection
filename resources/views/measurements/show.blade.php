@@ -35,7 +35,8 @@
                 <p style="font-size: 13px; font-weight: 600; color: var(--text-color); margin-bottom: 8px; text-align: center;">Foto Asli</p>
                 @if($measurement->photo_path)
                     <div class="detail-photo">
-                        <img src="{{ Storage::disk('r2')->url($measurement->photo_path) }}" alt="Foto Asli">
+                        <img src="{{ $measurement->photo_url }}" alt="Foto Asli"
+                            onerror="this.src='{{ $measurement->photo_url_fallback }}';this.onerror=function(){this.style.display='none'}">
                     </div>
                 @else
                     <div class="empty-state" style="padding: 20px;">
@@ -49,7 +50,8 @@
                 <p style="font-size: 13px; font-weight: 600; color: var(--text-color); margin-bottom: 8px; text-align: center;">MediaPipe Pose</p>
                 @if($measurement->pose_photo_path)
                     <div class="detail-photo">
-                        <img src="{{ Storage::disk('r2')->url($measurement->pose_photo_path) }}" alt="Foto Pose ML">
+                        <img src="{{ $measurement->pose_photo_url }}" alt="Foto Pose ML"
+                            onerror="this.src='{{ $measurement->pose_photo_url_fallback }}';this.onerror=function(){this.style.display='none'}">
                     </div>
                 @else
                     <div class="empty-state" style="padding: 20px;">

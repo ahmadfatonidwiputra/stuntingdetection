@@ -46,7 +46,8 @@
                         <div style="display: flex; align-items: center; gap: 12px;">
                             @if($photoMeasurement?->photo_path)
                                 <div style="width: 52px; height: 52px; border-radius: 14px; overflow: hidden; background: var(--bg-glass); border: 1px solid var(--border-glass); flex-shrink: 0;">
-                                    <img src="{{ Storage::disk('r2')->url($photoMeasurement->photo_path) }}" alt="Foto {{ $anak->nama }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <img src="{{ $photoMeasurement->photo_url }}" alt="Foto {{ $anak->nama }}" style="width: 100%; height: 100%; object-fit: cover;"
+                                        onerror="this.src='{{ $photoMeasurement->photo_url_fallback }}';this.onerror=function(){this.style.display='none'}">
                                 </div>
                             @else
                                 <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(124, 58, 237, 0.14)); border: 1px dashed var(--border-glass); color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">

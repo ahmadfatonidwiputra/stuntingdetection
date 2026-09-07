@@ -150,7 +150,8 @@
             <div>
                 @if($photoMeasurement?->photo_path)
                     <div style="border-radius: 18px; overflow: hidden; border: 1px solid var(--border-glass); background: var(--bg-glass); aspect-ratio: 4 / 5;">
-                        <img src="{{ Storage::disk('r2')->url($photoMeasurement->photo_path) }}" alt="Foto {{ $anak->nama }}" style="width: 100%; height: 100%; object-fit: cover;">
+                        <img src="{{ $photoMeasurement->photo_url }}" alt="Foto {{ $anak->nama }}" style="width: 100%; height: 100%; object-fit: cover;"
+                            onerror="this.src='{{ $photoMeasurement->photo_url_fallback }}';this.onerror=function(){this.style.display='none'}">
                     </div>
                     <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px; text-align: center;">
                         Foto dari pengukuran {{ $photoMeasurement->measured_at->translatedFormat('d M Y') }}
