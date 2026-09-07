@@ -101,6 +101,9 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
 
         // Antropometri Anak (acuan Permenkes No. 2 Tahun 2020)
         Route::get('/antropometri', [AntropometriController::class, 'index'])->name('antropometri.index');
+
+        // Data Anak (seluruh anak, lintas posyandu)
+        Route::get('/anak', [SuperAdminController::class, 'anakIndex'])->name('anak.index');
     });
 
 // ── Petugas Dashboard & Measurements ───────────────

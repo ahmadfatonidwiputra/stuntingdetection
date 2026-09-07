@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ExportsMeasurementsCsv;
+use App\Models\Anak;
 use App\Models\Measurement;
 use App\Models\PetugasProfile;
 use App\Models\Posyandu;
@@ -46,6 +47,9 @@ class SuperAdminController extends Controller
             ];
         }
 
+        // Status gizi anak (berdasarkan pengukuran terakhir tiap anak)
+        $anakStatusCounts = $this->anakStatusCounts();
+
         return view('super-admin.dashboard', compact(
             'totalPetugas',
             'pendingCount',
@@ -54,7 +58,75 @@ class SuperAdminController extends Controller
             'totalAnak',
             'totalPemeriksaan',
             'recentPending',
-            'monthlyStats'
+            'monthlyStats',
+            'anakStatusCounts'
+        ));
+    }
+
+    /**
+     * Hitung jumlah anak per status gizi (Normal, Stunting, Sangat Stunting, Belum Diukur)
+     * berdasarkan kategori stunting dari pengukuran terakhir masing-masing anak.
+     */
+    private function anakStatusCounts(): array
+    {
+        return [
+            'Normal' => Anak::whereHas('latestMeasurement', fn ($q) => $q->where('stunting_category', 'Normal'))->count(),
+            'Stunting' => Anak::whereHas('latestMeasurement', fn ($q) => $q->where('stunting_category', 'Stunting'))->count(),
+            'Sangat Stunting' => Anak::whereHas('latestMeasurement', fn ($q) => $q->where('stunting_category', 'Sangat Stunting'))->count(),
+            'Belum Diukur' => Anak::whereDoesntHave('measurements')->count(),
+        ];
+    }
+
+    /**
+     * Data Anak: daftar seluruh anak lintas posyandu, dengan filter & pencarian.
+     */
+    public function anakIndex(Request $request)
+    {
+        $search = $request->get('search');
+        $status = $request->get('status');
+        $posyanduId = $request->get('posyandu_id');
+        $jenisKelamin = $request->get('jenis_kelamin');
+
+        $query = Anak::with(['posyandu', 'latestMeasurement']);
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nama', 'like', "%{$search}%")
+                    ->orWhere('nik_anak', 'like', "%{$search}%")
+                    ->orWhere('nama_ayah', 'like', "%{$search}%")
+                    ->orWhere('nama_ibu', 'like', "%{$search}%");
+            });
+        }
+
+        if ($posyanduId) {
+            $query->where('posyandu_id', $posyanduId);
+        }
+
+        if ($jenisKelamin) {
+            $query->where('jenis_kelamin', $jenisKelamin);
+        }
+
+        if ($status) {
+            if ($status === 'Belum Diukur') {
+                $query->whereDoesntHave('measurements');
+            } else {
+                $query->whereHas('latestMeasurement', fn ($q) => $q->where('stunting_category', $status));
+            }
+        }
+
+        $anak = $query->latest()->paginate(20)->withQueryString();
+
+        $posyanduList = Posyandu::orderBy('nama')->get();
+        $statusCounts = $this->anakStatusCounts();
+
+        return view('super-admin.anak.index', compact(
+            'anak',
+            'search',
+            'status',
+            'posyanduId',
+            'jenisKelamin',
+            'posyanduList',
+            'statusCounts'
         ));
     }
 

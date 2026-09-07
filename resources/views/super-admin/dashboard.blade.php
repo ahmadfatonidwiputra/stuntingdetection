@@ -1,5 +1,14 @@
 @extends('layouts.main')
 
+@push('styles')
+<style>
+    .anak-status-layout { display: grid; grid-template-columns: 260px 1fr; gap: 24px; align-items: center; }
+    @media (max-width: 768px) {
+        .anak-status-layout { grid-template-columns: 1fr; }
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="page-header">
     <h1 class="page-title">Dashboard Super Admin</h1>
@@ -53,6 +62,43 @@
         </div>
         <div style="position: relative; height: 300px; width: 100%;">
             <canvas id="statusChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="chart-container" style="grid-template-columns: 1fr;">
+    <div class="glass-card fade-in">
+        <div class="flex-between" style="margin-bottom: 0;">
+            <div class="chart-title" style="margin-bottom: 20px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+                Status Gizi Anak
+            </div>
+            <a href="{{ route('super-admin.anak.index') }}" class="btn btn-secondary btn-sm">Lihat Data Anak →</a>
+        </div>
+        <div class="anak-status-layout">
+            <div style="position: relative; height: 260px; width: 100%;">
+                <canvas id="anakStatusChart"></canvas>
+            </div>
+            <div class="antro-status-grid">
+                @foreach($anakStatusCounts as $label => $count)
+                @php
+                    $sc = match($label) {
+                        'Normal' => 'severity-normal',
+                        'Stunting' => 'severity-moderate',
+                        'Sangat Stunting' => 'severity-severe',
+                        default => 'severity-unknown',
+                    };
+                    $statusParam = $label === 'Belum Diukur' ? 'Belum Diukur' : $label;
+                @endphp
+                <a href="{{ route('super-admin.anak.index', ['status' => $statusParam]) }}" class="antro-status-card" style="text-decoration: none; display: block;">
+                    <div class="antro-status-label">{{ $label }}</div>
+                    <div class="antro-status-z">{{ $count }}</div>
+                    <span class="severity-pill {{ $sc }}">Lihat detail →</span>
+                </a>
+                @endforeach
+            </div>
         </div>
     </div>
 </div>
@@ -145,6 +191,37 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         options: {
             responsive: true, maintainAspectRatio: false, cutout: '65%',
+            plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 16, font: { family: 'Inter' } } } }
+        }
+    });
+
+    // Status Gizi Anak Chart
+    const anakStatusCounts = @json($anakStatusCounts);
+    const anakStatusLabels = Object.keys(anakStatusCounts);
+    const anakStatusUrl = @json(route('super-admin.anak.index'));
+    const anakStatusColors = { 'Normal': '#10b981', 'Stunting': '#f59e0b', 'Sangat Stunting': '#ef4444', 'Belum Diukur': '#64748b' };
+
+    new Chart(document.getElementById('anakStatusChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: anakStatusLabels,
+            datasets: [{
+                data: anakStatusLabels.map(l => anakStatusCounts[l]),
+                backgroundColor: anakStatusLabels.map(l => anakStatusColors[l] || '#64748b'),
+                borderColor: 'transparent',
+                borderWidth: 2,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, cutout: '65%',
+            onClick: (evt, elements) => {
+                if (!elements.length) return;
+                const label = anakStatusLabels[elements[0].index];
+                window.location.href = anakStatusUrl + '?status=' + encodeURIComponent(label);
+            },
+            onHover: (evt, elements) => {
+                evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+            },
             plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 16, font: { family: 'Inter' } } } }
         }
     });
