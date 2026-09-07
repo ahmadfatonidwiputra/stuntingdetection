@@ -131,6 +131,7 @@
                                 </a>
                             </th>
                         @endforeach
+                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -160,6 +161,11 @@
                             @else
                                 <span class="badge" style="background: rgba(100,116,139,0.15); color: #94a3b8;">Belum Diukur</span>
                             @endif
+                        </td>
+                        <td>
+                            <a href="{{ route('measurements.anak.show', $a) }}" class="btn btn-secondary btn-sm" style="white-space: nowrap;">
+                                Tumbuh Kembang
+                            </a>
                         </td>
                     </tr>
                     @endforeach

@@ -93,6 +93,10 @@
         ];
     };
 
+    $isSuperAdmin = auth()->user()->isSuperAdmin();
+    $backRoute = $isSuperAdmin ? route('super-admin.anak.index') : route('measurements.index');
+    $backLabel = $isSuperAdmin ? '← Kembali ke Data Anak' : '← Kembali ke Riwayat';
+
     $photoMeasurement = $anak->latestPhotoMeasurement;
     // Chart always reads chronologically regardless of how the table below is sorted,
     // otherwise the growth line would zig-zag when a petugas sorts the table by height/weight/etc.
@@ -107,7 +111,7 @@
 <div class="page-header flex-between">
     <div>
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap;">
-            <a href="{{ route('measurements.index') }}" class="btn btn-secondary btn-sm">← Kembali ke Riwayat</a>
+            <a href="{{ $backRoute }}" class="btn btn-secondary btn-sm">{{ $backLabel }}</a>
             <span class="badge" style="background: rgba(59, 130, 246, 0.12); color: var(--accent-blue);">
                 {{ $anak->nik_anak ?: 'NIK belum tersedia' }}
             </span>
@@ -124,6 +128,7 @@
             </svg>
             Download Laporan
         </a>
+        @unless($isSuperAdmin)
         <a href="{{ route('measurements.create', ['anak_id' => $anak->id]) }}" class="btn btn-primary">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="12" y1="5" x2="12" y2="19"/>
@@ -131,6 +136,7 @@
             </svg>
             Pengukuran Baru
         </a>
+        @endunless
     </div>
 </div>
 
@@ -217,7 +223,7 @@
             </div>
         </div>
 
-        @if($anak->measurements->contains(fn ($measurement) => (int) $measurement->user_id !== (int) auth()->id()))
+        @if(! $isSuperAdmin && $anak->measurements->contains(fn ($measurement) => (int) $measurement->user_id !== (int) auth()->id()))
             <div style="margin-top: 16px; padding: 12px 14px; border-radius: var(--radius-sm); background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.16); color: var(--text-secondary); font-size: 13px; line-height: 1.6;">
                 Riwayat ini menampilkan seluruh pengukuran anak di posyandu yang sama. Catatan dari petugas lain tetap bisa dilihat, tetapi tidak bisa dihapus dari akun Anda.
             </div>

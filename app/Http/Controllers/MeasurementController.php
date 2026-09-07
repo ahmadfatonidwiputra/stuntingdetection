@@ -562,6 +562,11 @@ class MeasurementController extends Controller
     private function ensureCanAccessAnak(Anak $anak): void
     {
         $user = Auth::user();
+
+        if ($user?->isSuperAdmin()) {
+            return;
+        }
+
         $posyanduId = $user?->petugasProfile?->posyandu_id;
 
         if (! $user?->isPetugasPosyandu() || ! $posyanduId || (int) $anak->posyandu_id !== (int) $posyanduId) {
