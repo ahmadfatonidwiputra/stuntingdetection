@@ -96,10 +96,10 @@ class SuperAdminController extends Controller
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('nama', 'like', "%{$search}%")
-                    ->orWhere('nik_anak', 'like', "%{$search}%")
-                    ->orWhere('nama_ayah', 'like', "%{$search}%")
-                    ->orWhere('nama_ibu', 'like', "%{$search}%");
+                $q->whereLike('nama', "%{$search}%")
+                    ->orWhereLike('nik_anak', "%{$search}%")
+                    ->orWhereLike('nama_ayah', "%{$search}%")
+                    ->orWhereLike('nama_ibu', "%{$search}%");
             });
         }
 
@@ -180,12 +180,12 @@ class SuperAdminController extends Controller
         // Search
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
+                $q->whereLike('name', "%{$search}%")
+                  ->orWhereLike('email', "%{$search}%")
                   ->orWhereHas('petugasProfile', function ($pq) use ($search) {
-                      $pq->where('nama_lengkap', 'like', "%{$search}%")
-                         ->orWhere('posyandu_name', 'like', "%{$search}%")
-                         ->orWhere('kota', 'like', "%{$search}%");
+                      $pq->whereLike('nama_lengkap', "%{$search}%")
+                         ->orWhereLike('posyandu_name', "%{$search}%")
+                         ->orWhereLike('kota', "%{$search}%");
                   });
             });
         }
@@ -335,10 +335,10 @@ class SuperAdminController extends Controller
         $posyandu = Posyandu::query()
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('nama', 'like', "%{$search}%")
-                        ->orWhere('kode_posyandu', 'like', "%{$search}%")
-                        ->orWhere('kota', 'like', "%{$search}%")
-                        ->orWhere('kecamatan', 'like', "%{$search}%");
+                    $q->whereLike('nama', "%{$search}%")
+                        ->orWhereLike('kode_posyandu', "%{$search}%")
+                        ->orWhereLike('kota', "%{$search}%")
+                        ->orWhereLike('kecamatan', "%{$search}%");
                 });
             })
             ->when($status, fn ($query) => $query->where('status', $status))
@@ -415,7 +415,7 @@ class SuperAdminController extends Controller
         $search = $request->get('search');
 
         $posyanduList = Posyandu::query()
-            ->when($search, fn ($q) => $q->where('nama', 'like', "%{$search}%"))
+            ->when($search, fn ($q) => $q->whereLike('nama', "%{$search}%"))
             ->withCount(['anak', 'measurements'])
             ->orderBy('nama')
             ->paginate(15)

@@ -30,10 +30,10 @@ class AnakController extends Controller
         $search = $request->input('search');
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('nama', 'LIKE', "%{$search}%")
-                  ->orWhere('nik_anak', 'LIKE', "%{$search}%")
-                  ->orWhere('nama_ayah', 'LIKE', "%{$search}%")
-                  ->orWhere('nama_ibu', 'LIKE', "%{$search}%");
+                $q->whereLike('nama', "%{$search}%")
+                  ->orWhereLike('nik_anak', "%{$search}%")
+                  ->orWhereLike('nama_ayah', "%{$search}%")
+                  ->orWhereLike('nama_ibu', "%{$search}%");
             });
         }
 
@@ -236,8 +236,8 @@ class AnakController extends Controller
         }
 
         $results = $query->where(function ($qu) use ($q) {
-                $qu->where('nama_ayah', 'LIKE', "%{$q}%")
-                   ->orWhere('nama_ibu', 'LIKE', "%{$q}%");
+                $qu->whereLike('nama_ayah', "%{$q}%")
+                   ->orWhereLike('nama_ibu', "%{$q}%");
             })
             ->distinct()
             ->limit(10)
