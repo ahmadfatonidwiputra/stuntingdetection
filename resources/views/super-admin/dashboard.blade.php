@@ -40,32 +40,6 @@
 </div>
 
 <!-- Charts -->
-<div class="chart-container">
-    <div class="glass-card fade-in">
-        <div class="chart-title">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
-            </svg>
-            Registrasi Petugas (6 Bulan Terakhir)
-        </div>
-        <div style="position: relative; height: 300px; width: 100%;">
-            <canvas id="registrationChart"></canvas>
-        </div>
-    </div>
-
-    <div class="glass-card fade-in">
-        <div class="chart-title">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2">
-                <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>
-            </svg>
-            Status Petugas
-        </div>
-        <div style="position: relative; height: 300px; width: 100%;">
-            <canvas id="statusChart"></canvas>
-        </div>
-    </div>
-</div>
-
 <div class="chart-container" style="grid-template-columns: 1fr;">
     <div class="glass-card fade-in">
         <div class="flex-between" style="margin-bottom: 0;">
@@ -99,6 +73,32 @@
                 </a>
                 @endforeach
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="chart-container">
+    <div class="glass-card fade-in">
+        <div class="chart-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
+            </svg>
+            Registrasi Petugas (6 Bulan Terakhir)
+        </div>
+        <div style="position: relative; height: 300px; width: 100%;">
+            <canvas id="registrationChart"></canvas>
+        </div>
+    </div>
+
+    <div class="glass-card fade-in">
+        <div class="chart-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2">
+                <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>
+            </svg>
+            Status Petugas
+        </div>
+        <div style="position: relative; height: 300px; width: 100%;">
+            <canvas id="statusChart"></canvas>
         </div>
     </div>
 </div>
