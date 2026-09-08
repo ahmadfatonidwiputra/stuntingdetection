@@ -491,46 +491,96 @@ async function capturePhoto() {
     }, 'image/jpeg', 0.8);
 }
 
-function handlePhotoUpload(event) {
+// Decode a user-picked file into something drawable on a canvas.
+// Tried in order because each step fails on a different class of file/browser:
+//   1. createImageBitmap() decodes the File directly - no URL, so it is immune
+//      to CSP img-src rules, and it handles every format the browser knows.
+//   2. a data: URL from FileReader - works when a blob: URL would be blocked.
+//   3. a blob: URL - cheapest on memory, last resort for old browsers.
+async function decodeImageFile(file) {
+    if (window.createImageBitmap) {
+        try {
+            return await createImageBitmap(file);
+        } catch (e) {
+            console.warn('createImageBitmap gagal, fallback ke <img>:', e);
+        }
+    }
+
+    const loadVia = (src) => new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Browser tidak bisa membaca format gambar ini.'));
+        img.src = src;
+    });
+
+    try {
+        const dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('Gagal membaca isi file.'));
+            reader.readAsDataURL(file);
+        });
+        return await loadVia(dataUrl);
+    } catch (e) {
+        console.warn('Decode via data URL gagal, fallback ke object URL:', e);
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    try {
+        return await loadVia(objectUrl);
+    } finally {
+        URL.revokeObjectURL(objectUrl);
+    }
+}
+
+async function handlePhotoUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    const objectUrl = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = function() {
-        URL.revokeObjectURL(objectUrl);
+    let img;
+    try {
+        img = await decodeImageFile(file);
+    } catch (err) {
+        console.error('Gagal decode foto:', file.name, file.type, err);
 
-        // Downscale gallery photos to the same size as camera captures.
-        // Full-resolution phone photos (several MB) were slow enough on the
-        // ML API to trip Heroku's 30s request timeout (503).
-        const MAX_DIM = 1280;
-        let { width, height } = img;
-        if (width > MAX_DIM || height > MAX_DIM) {
-            const scale = MAX_DIM / Math.max(width, height);
-            width = Math.round(width * scale);
-            height = Math.round(height * scale);
-        }
+        // iPhone HEIC/HEIF is the usual culprit: the file picker offers it but
+        // Chrome/Firefox cannot decode it, so say what to do about it.
+        const name = (file.name || '').toLowerCase();
+        const isHeic = /\.(heic|heif)$/.test(name) || /heic|heif/.test(file.type || '');
+        alert(isHeic
+            ? 'Format foto HEIC (bawaan iPhone) belum didukung browser ini.\n\nUbah ke JPG/PNG dulu, atau di iPhone: Pengaturan > Kamera > Format > Paling Kompatibel.'
+            : 'Gagal membaca foto. Silakan pilih file gambar lain (JPG atau PNG).');
+        event.target.value = '';
+        return;
+    }
 
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+    // Downscale gallery photos to the same size as camera captures.
+    // Full-resolution phone photos (several MB) were slow enough on the
+    // ML API to trip Heroku's 30s request timeout (503).
+    const MAX_DIM = 1280;
+    let width = img.width;
+    let height = img.height;
+    if (width > MAX_DIM || height > MAX_DIM) {
+        const scale = MAX_DIM / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+    }
 
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        document.getElementById('capturedPhoto').src = dataUrl;
-        document.getElementById('capturedPhoto').style.display = 'block';
-        document.getElementById('cameraVideo').style.display = 'none';
-        document.getElementById('photoBase64').value = dataUrl;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+    if (typeof img.close === 'function') img.close();
 
-        canvas.toBlob(blob => {
-            sendToMLApi(blob);
-        }, 'image/jpeg', 0.8);
-    };
-    img.onerror = function() {
-        URL.revokeObjectURL(objectUrl);
-        alert('Gagal membaca foto. Silakan pilih file gambar lain.');
-    };
-    img.src = objectUrl;
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    document.getElementById('capturedPhoto').src = dataUrl;
+    document.getElementById('capturedPhoto').style.display = 'block';
+    document.getElementById('cameraVideo').style.display = 'none';
+    document.getElementById('photoBase64').value = dataUrl;
+
+    canvas.toBlob(blob => {
+        sendToMLApi(blob);
+    }, 'image/jpeg', 0.8);
 }
 
 async function sendToMLApi(imageBlob, isRetry = false) {

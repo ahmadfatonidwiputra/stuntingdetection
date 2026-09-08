@@ -38,7 +38,10 @@ class SecurityHeaders
             "object-src 'none'",
             "frame-ancestors 'self'",
             "form-action 'self'",
-            "img-src 'self' data: https:",
+            // blob: is required: the photo upload preview renders the chosen
+            // file through URL.createObjectURL() before sending it to the ML API.
+            "img-src 'self' data: blob: https:",
+            "media-src 'self' data: blob:",
             "font-src 'self' data: https://fonts.gstatic.com https://fonts.bunny.net",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net https://cdn.jsdelivr.net",
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://code.jquery.com",
