@@ -429,15 +429,9 @@ class SuperAdminController extends Controller
     {
         $search = $request->get('search');
         $status = $request->get('status');
-        $kecamatan = $request->get('kecamatan');
-        $kelurahan = $request->get('kelurahan');
 
-        // Desa/kelurahan selalu dibaca dalam konteks kecamatan yang dipilih.
-        // Kalau kecamatan diganti tapi desa lama ikut terbawa di query string,
-        // pasangan itu tidak akan pernah cocok, jadi desanya diabaikan saja.
-        if ($kecamatan && $kelurahan && ! $this->kelurahanAdaDiKecamatan($kelurahan, $kecamatan)) {
-            $kelurahan = null;
-        }
+        ['kecamatan' => $kecamatan, 'kelurahan' => $kelurahan,
+            'kecamatanList' => $kecamatanList, 'kelurahanList' => $kelurahanList] = $this->wilayahFilter($request);
 
         // Filter selain status; dipakai ulang untuk daftar sekaligus penghitung
         // chip, supaya angka di chip selalu cocok dengan hasil saat diklik.
@@ -462,12 +456,6 @@ class SuperAdminController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $kecamatanList = $this->wilayahOptions('kecamatan');
-
-        // Pilihan desa dipersempit ke kecamatan terpilih supaya dropdown-nya
-        // tidak memuat seluruh desa dari kecamatan lain.
-        $kelurahanList = $this->wilayahOptions('kelurahan', $kecamatan);
-
         $statusCounts = [
             'active' => Posyandu::query()->tap($baseFilter)->where('status', 'active')->count(),
             'inactive' => Posyandu::query()->tap($baseFilter)->where('status', '!=', 'active')->count(),
@@ -483,6 +471,33 @@ class SuperAdminController extends Controller
             'kelurahanList',
             'statusCounts'
         ));
+    }
+
+    /**
+     * Baca filter wilayah (kecamatan + desa) dari request sekaligus menyiapkan
+     * daftar opsi dropdown-nya. Dipakai bersama menu Posyandu & Laporan supaya
+     * kedua halaman berperilaku persis sama.
+     */
+    private function wilayahFilter(Request $request): array
+    {
+        $kecamatan = $request->get('kecamatan');
+        $kelurahan = $request->get('kelurahan');
+
+        // Desa/kelurahan selalu dibaca dalam konteks kecamatan yang dipilih.
+        // Kalau kecamatan diganti tapi desa lama ikut terbawa di query string,
+        // pasangan itu tidak akan pernah cocok, jadi desanya diabaikan saja.
+        if ($kecamatan && $kelurahan && ! $this->kelurahanAdaDiKecamatan($kelurahan, $kecamatan)) {
+            $kelurahan = null;
+        }
+
+        return [
+            'kecamatan' => $kecamatan,
+            'kelurahan' => $kelurahan,
+            'kecamatanList' => $this->wilayahOptions('kecamatan'),
+            // Pilihan desa dipersempit ke kecamatan terpilih supaya dropdown-nya
+            // tidak memuat seluruh desa dari kecamatan lain.
+            'kelurahanList' => $this->wilayahOptions('kelurahan', $kecamatan),
+        ];
     }
 
     /**
@@ -571,14 +586,26 @@ class SuperAdminController extends Controller
     {
         $search = $request->get('search');
 
+        ['kecamatan' => $kecamatan, 'kelurahan' => $kelurahan,
+            'kecamatanList' => $kecamatanList, 'kelurahanList' => $kelurahanList] = $this->wilayahFilter($request);
+
         $posyanduList = Posyandu::query()
             ->when($search, fn ($q) => $q->whereLike('nama', "%{$search}%"))
+            ->when($kecamatan, fn ($q) => $q->where('kecamatan', $kecamatan))
+            ->when($kelurahan, fn ($q) => $q->where('kelurahan', $kelurahan))
             ->withCount(['anak', 'measurements'])
             ->orderBy('nama')
             ->paginate(15)
             ->withQueryString();
 
-        return view('super-admin.laporan.index', compact('posyanduList', 'search'));
+        return view('super-admin.laporan.index', compact(
+            'posyanduList',
+            'search',
+            'kecamatan',
+            'kelurahan',
+            'kecamatanList',
+            'kelurahanList'
+        ));
     }
 
     public function laporanShow(Request $request, Posyandu $posyandu)

@@ -18,25 +18,7 @@
             <label class="form-label">Cari</label>
             <input type="text" name="search" value="{{ $search }}" class="form-input" placeholder="Nama posyandu, kode, kota, kecamatan, atau desa...">
         </div>
-        <div style="flex: 1; min-width: 170px;">
-            <label class="form-label">Kecamatan</label>
-            {{-- Ganti kecamatan = daftar desa ikut berubah, jadi pilihan desa lama direset. --}}
-            <select name="kecamatan" class="form-input" onchange="this.form.kelurahan.value = ''; this.form.submit();">
-                <option value="">Semua Kecamatan</option>
-                @foreach($kecamatanList as $k)
-                    <option value="{{ $k }}" {{ $kecamatan === $k ? 'selected' : '' }}>{{ $k }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div style="flex: 1; min-width: 170px;">
-            <label class="form-label">Desa / Kelurahan</label>
-            <select name="kelurahan" class="form-input" {{ $kelurahanList->isEmpty() ? 'disabled' : '' }}>
-                <option value="">{{ $kelurahanList->isEmpty() ? 'Tidak ada data desa' : 'Semua Desa' }}</option>
-                @foreach($kelurahanList as $d)
-                    <option value="{{ $d }}" {{ $kelurahan === $d ? 'selected' : '' }}>{{ $d }}</option>
-                @endforeach
-            </select>
-        </div>
+        @include('super-admin.partials.filter-wilayah')
         <div style="flex: 1; min-width: 150px;">
             <label class="form-label">Status</label>
             <select name="status" class="form-input">

@@ -6,14 +6,20 @@
     <p class="page-subtitle">Lihat dan unduh data pengukuran per posyandu</p>
 </div>
 
-<!-- Search -->
+<!-- Filter & Search -->
 <div class="glass-card fade-in" style="margin-bottom: 24px;">
-    <form method="GET" action="{{ route('super-admin.laporan.index') }}" style="display: flex; gap: 12px;">
-        <input type="text" name="search" value="{{ $search }}" class="form-input" placeholder="Cari nama posyandu..." style="flex: 1;">
-        <button type="submit" class="btn btn-primary btn-sm">Cari</button>
-        @if($search)
-            <a href="{{ route('super-admin.laporan.index') }}" class="btn btn-secondary btn-sm">Reset</a>
-        @endif
+    <form method="GET" action="{{ route('super-admin.laporan.index') }}" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+        <div style="flex: 2; min-width: 220px;">
+            <label class="form-label">Cari</label>
+            <input type="text" name="search" value="{{ $search }}" class="form-input" placeholder="Cari nama posyandu...">
+        </div>
+        @include('super-admin.partials.filter-wilayah')
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-primary btn-sm">Terapkan</button>
+            @if($search || $kecamatan || $kelurahan)
+                <a href="{{ route('super-admin.laporan.index') }}" class="btn btn-secondary btn-sm">Reset</a>
+            @endif
+        </div>
     </form>
 </div>
 
@@ -43,8 +49,10 @@
                             @endif
                         </td>
                         <td>
-                            <div>{{ $p->kota ?? '-' }}</div>
-                            <div style="font-size: 12px; color: var(--text-muted);">{{ $p->provinsi }}</div>
+                            <div>{{ $p->kecamatan ?? '-' }}</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">
+                                {{ collect([$p->kelurahan, $p->kota])->filter()->implode(' · ') ?: '-' }}
+                            </div>
                         </td>
                         <td style="text-align: center;">{{ $p->anak_count }}</td>
                         <td style="text-align: center;">{{ $p->measurements_count }}</td>
@@ -66,7 +74,10 @@
         <div class="empty-state">
             <div class="empty-state-icon">📊</div>
             <h3>Tidak ada data posyandu</h3>
-            <p>{{ $search ? 'Tidak ditemukan hasil untuk pencarian "' . $search . '"' : 'Belum ada posyandu terdaftar.' }}</p>
+            <p>{{ $search || $kecamatan || $kelurahan ? 'Tidak ditemukan posyandu untuk pencarian atau filter wilayah yang dipilih.' : 'Belum ada posyandu terdaftar.' }}</p>
+            @if($search || $kecamatan || $kelurahan)
+                <a href="{{ route('super-admin.laporan.index') }}" class="btn btn-secondary btn-sm" style="margin-top: 12px;">Reset Filter</a>
+            @endif
         </div>
     @endif
 </div>
