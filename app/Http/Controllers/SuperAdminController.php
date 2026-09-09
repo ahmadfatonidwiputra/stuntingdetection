@@ -11,6 +11,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SuperAdminController extends Controller
@@ -305,6 +308,101 @@ class SuperAdminController extends Controller
         }
 
         return back()->with('success', "Akun petugas {$user->name} berhasil diaktifkan kembali.");
+    }
+
+    /**
+     * Reset password petugas.
+     *
+     * Password tersimpan sebagai hash bcrypt sehingga tidak bisa dibaca kembali;
+     * satu-satunya cara memulihkan akses adalah menetapkan password baru.
+     * Password baru dikirim balik lewat flash session agar bisa ditampilkan
+     * sekali saja di halaman detail, lalu diserahkan ke petugas ybs.
+     */
+    public function resetPassword(Request $request, User $user)
+    {
+        if (! $user->isPetugas()) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'mode' => ['required', 'in:auto,manual'],
+            'password' => ['exclude_if:mode,auto', 'required', 'confirmed', Password::defaults()],
+        ], [], [
+            'password' => 'password baru',
+        ]);
+
+        $newPassword = ($validated['mode'] === 'auto')
+            ? $this->generateReadablePassword()
+            : $validated['password'];
+
+        // remember_token ikut diacak supaya sesi "ingat saya" yang lama tidak
+        // bisa dipakai lagi setelah password diganti.
+        $user->forceFill([
+            'password' => $newPassword,
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        return back()
+            ->with('success', "Password petugas {$user->name} berhasil direset.")
+            ->with('new_password', $newPassword);
+    }
+
+    /**
+     * Ubah username (alamat email) yang dipakai petugas untuk login.
+     */
+    public function updateUsername(Request $request, User $user)
+    {
+        if (! $user->isPetugas()) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'email' => [
+                'required', 'string', 'lowercase', 'email', 'max:255',
+                Rule::unique(User::class)->ignore($user->id),
+            ],
+        ], [], [
+            'email' => 'username (email)',
+        ]);
+
+        if ($validated['email'] === $user->email) {
+            return back()->with('error', 'Username baru sama dengan username saat ini.');
+        }
+
+        $oldEmail = $user->email;
+
+        // email_verified_at sengaja tidak direset: perubahan ini dilakukan
+        // manual oleh super admin, dan mereset status verifikasi akan mengunci
+        // petugas dari seluruh route ber-middleware "verified".
+        $user->update(['email' => $validated['email']]);
+
+        return back()->with('success', "Username petugas {$user->name} diubah dari {$oldEmail} menjadi {$validated['email']}.");
+    }
+
+    /**
+     * Password acak yang mudah dibacakan: tanpa karakter ambigu (0/O, 1/l/I)
+     * dan dijamin memuat minimal satu huruf besar, huruf kecil, dan angka.
+     */
+    private function generateReadablePassword(int $length = 10): string
+    {
+        $upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+        $lower = 'abcdefghijkmnopqrstuvwxyz';
+        $digit = '23456789';
+        $pool = $upper.$lower.$digit;
+
+        $chars = [
+            $upper[random_int(0, strlen($upper) - 1)],
+            $lower[random_int(0, strlen($lower) - 1)],
+            $digit[random_int(0, strlen($digit) - 1)],
+        ];
+
+        for ($i = count($chars); $i < $length; $i++) {
+            $chars[] = $pool[random_int(0, strlen($pool) - 1)];
+        }
+
+        shuffle($chars);
+
+        return implode('', $chars);
     }
 
     public function destroy(User $user)

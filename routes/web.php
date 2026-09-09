@@ -84,6 +84,8 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
         Route::post('/petugas/{user}/reject', [SuperAdminController::class, 'reject'])->name('petugas.reject');
         Route::post('/petugas/{user}/suspend', [SuperAdminController::class, 'suspend'])->name('petugas.suspend');
         Route::post('/petugas/{user}/reactivate', [SuperAdminController::class, 'reactivate'])->name('petugas.reactivate');
+        Route::post('/petugas/{user}/reset-password', [SuperAdminController::class, 'resetPassword'])->name('petugas.reset-password');
+        Route::post('/petugas/{user}/username', [SuperAdminController::class, 'updateUsername'])->name('petugas.update-username');
         Route::delete('/petugas/{user}', [SuperAdminController::class, 'destroy'])->name('petugas.destroy');
 
         // CRUD Posyandu
