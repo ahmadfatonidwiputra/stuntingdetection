@@ -429,23 +429,82 @@ class SuperAdminController extends Controller
     {
         $search = $request->get('search');
         $status = $request->get('status');
+        $kecamatan = $request->get('kecamatan');
+        $kelurahan = $request->get('kelurahan');
 
-        $posyandu = Posyandu::query()
-            ->when($search, function ($query) use ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->whereLike('nama', "%{$search}%")
+        // Desa/kelurahan selalu dibaca dalam konteks kecamatan yang dipilih.
+        // Kalau kecamatan diganti tapi desa lama ikut terbawa di query string,
+        // pasangan itu tidak akan pernah cocok, jadi desanya diabaikan saja.
+        if ($kecamatan && $kelurahan && ! $this->kelurahanAdaDiKecamatan($kelurahan, $kecamatan)) {
+            $kelurahan = null;
+        }
+
+        // Filter selain status; dipakai ulang untuk daftar sekaligus penghitung
+        // chip, supaya angka di chip selalu cocok dengan hasil saat diklik.
+        $baseFilter = fn ($query) => $query
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($inner) use ($search) {
+                    $inner->whereLike('nama', "%{$search}%")
                         ->orWhereLike('kode_posyandu', "%{$search}%")
                         ->orWhereLike('kota', "%{$search}%")
-                        ->orWhereLike('kecamatan', "%{$search}%");
+                        ->orWhereLike('kecamatan', "%{$search}%")
+                        ->orWhereLike('kelurahan', "%{$search}%");
                 });
             })
+            ->when($kecamatan, fn ($q) => $q->where('kecamatan', $kecamatan))
+            ->when($kelurahan, fn ($q) => $q->where('kelurahan', $kelurahan));
+
+        $posyandu = Posyandu::query()
+            ->tap($baseFilter)
             ->when($status, fn ($query) => $query->where('status', $status))
             ->withCount(['petugas', 'anak'])
             ->latest()
             ->paginate(15)
             ->withQueryString();
 
-        return view('super-admin.posyandu.index', compact('posyandu', 'search', 'status'));
+        $kecamatanList = $this->wilayahOptions('kecamatan');
+
+        // Pilihan desa dipersempit ke kecamatan terpilih supaya dropdown-nya
+        // tidak memuat seluruh desa dari kecamatan lain.
+        $kelurahanList = $this->wilayahOptions('kelurahan', $kecamatan);
+
+        $statusCounts = [
+            'active' => Posyandu::query()->tap($baseFilter)->where('status', 'active')->count(),
+            'inactive' => Posyandu::query()->tap($baseFilter)->where('status', '!=', 'active')->count(),
+        ];
+
+        return view('super-admin.posyandu.index', compact(
+            'posyandu',
+            'search',
+            'status',
+            'kecamatan',
+            'kelurahan',
+            'kecamatanList',
+            'kelurahanList',
+            'statusCounts'
+        ));
+    }
+
+    /**
+     * Daftar nilai wilayah unik (kecamatan / kelurahan) untuk dropdown filter,
+     * opsional dibatasi pada satu kecamatan.
+     */
+    private function wilayahOptions(string $column, ?string $kecamatan = null)
+    {
+        return Posyandu::query()
+            ->whereNotNull($column)
+            ->where($column, '!=', '')
+            ->when($kecamatan, fn ($query) => $query->where('kecamatan', $kecamatan))
+            ->distinct()
+            ->orderBy($column)
+            ->pluck($column);
+    }
+
+    private function kelurahanAdaDiKecamatan(string $kelurahan, string $kecamatan): bool
+    {
+        return Posyandu::where('kecamatan', $kecamatan)
+            ->where('kelurahan', $kelurahan)
+            ->exists();
     }
 
     public function posyanduCreate()
