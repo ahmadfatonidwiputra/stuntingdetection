@@ -45,7 +45,8 @@
             <tbody>
                 @foreach($anak->measurements as $measurement)
                     @php
-                        $canDelete = (int) $measurement->user_id === (int) auth()->id();
+                        // Hanya petugas yang mencatat pengukuran ini yang boleh mengubah/menghapusnya.
+                        $canModify = (int) $measurement->user_id === (int) auth()->id();
                         $antro = $measurement->antropometriLengkap();
                     @endphp
                     <tr>
@@ -98,9 +99,10 @@
                         </td>
                         <td>{{ $measurement->user->petugasProfile?->nama_lengkap ?? $measurement->user->name }}</td>
                         <td>
-                            <div style="display: flex; gap: 6px;">
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                                 <a href="{{ route('measurements.show', $measurement) }}" class="btn btn-secondary btn-sm">Detail</a>
-                                @if($canDelete)
+                                @if($canModify)
+                                    <a href="{{ route('measurements.edit', $measurement) }}" class="btn btn-primary btn-sm">Edit</a>
                                     <form method="POST" action="{{ route('measurements.destroy', $measurement) }}" onsubmit="return confirm('Yakin hapus pengukuran ini?')">
                                         @csrf
                                         @method('DELETE')

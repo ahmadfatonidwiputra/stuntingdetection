@@ -113,7 +113,7 @@ Route::middleware(['auth', 'verified', 'active.petugas'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/measurements/anak/{anak}', [MeasurementController::class, 'showAnak'])->name('measurements.anak.show');
     Route::get('/measurements/anak/{anak}/download', [MeasurementController::class, 'downloadAnak'])->name('measurements.anak.download');
-    Route::resource('measurements', MeasurementController::class)->except(['edit', 'update']);
+    Route::resource('measurements', MeasurementController::class);
     Route::get('/measurements-search-anak', [MeasurementController::class, 'searchAnak'])->name('measurements.search-anak');
     Route::post('/measurements/predict', [MeasurementController::class, 'predict'])->name('measurements.predict');
     Route::post('/measurements/warmup', [MeasurementController::class, 'warmup'])->name('measurements.warmup');

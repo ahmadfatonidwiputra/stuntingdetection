@@ -2,7 +2,7 @@
 
 @section('content')
 @php
-    $canDelete = (int) $measurement->user_id === (int) auth()->id();
+    $canModify = (int) $measurement->user_id === (int) auth()->id();
     $backUrl = $measurement->anak_id ? route('measurements.anak.show', $measurement->anak_id) : route('measurements.index');
 @endphp
 <div class="page-header">
@@ -218,7 +218,14 @@
                 <a href="{{ $backUrl }}" class="btn btn-secondary" style="flex: 1; justify-content: center;">
                     Kembali
                 </a>
-                @if($canDelete)
+                @if($canModify)
+                <a href="{{ route('measurements.edit', $measurement) }}" class="btn btn-primary" style="flex: 1; justify-content: center;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    Edit
+                </a>
                 <form method="POST" action="{{ route('measurements.destroy', $measurement) }}" onsubmit="return confirm('Yakin hapus pengukuran ini?')" style="flex: 1;">
                     @csrf
                     @method('DELETE')

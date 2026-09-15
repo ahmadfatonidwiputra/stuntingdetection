@@ -175,28 +175,7 @@ class MeasurementController extends Controller
         $zScore = Measurement::calculateZScore($validated['height_cm'], (int) $ageMonths, $anak->jenis_kelamin);
         $stuntingCategory = Measurement::getStuntingCategory($zScore);
 
-        $photoPath = null;
-        if ($request->hasFile('photo')) {
-            $photoPath = $request->file('photo')->store('measurements', 'r2');
-        } elseif ($request->filled('photo_base64')) {
-            // Handle base64 photo from camera capture
-            $imageData = $request->input('photo_base64');
-            $imageData = preg_replace('/^data:image\/\w+;base64,/', '', $imageData);
-            $imageData = base64_decode($imageData);
-            $filename = 'measurements/'.uniqid().'.jpg';
-            Storage::disk('r2')->put($filename, $imageData);
-            $photoPath = $filename;
-        }
-
-        $posePhotoPath = null;
-        if ($request->filled('pose_photo_base64')) {
-            $poseImageData = $request->input('pose_photo_base64');
-            $poseImageData = preg_replace('/^data:image\/\w+;base64,/', '', $poseImageData);
-            $poseImageData = base64_decode($poseImageData);
-            $poseFilename = 'measurements/pose_'.uniqid().'.jpg';
-            Storage::disk('r2')->put($poseFilename, $poseImageData);
-            $posePhotoPath = $poseFilename;
-        }
+        [$photoPath, $posePhotoPath] = $this->storeUploadedPhotos($request);
 
         Measurement::create([
             'user_id' => Auth::id(),
@@ -221,6 +200,79 @@ class MeasurementController extends Controller
 
         return redirect()->route('measurements.anak.show', $anak)
             ->with('success', 'Pengukuran berhasil disimpan!');
+    }
+
+    public function edit(Measurement $measurement)
+    {
+        $this->ensureCanModifyMeasurement($measurement);
+        $measurement->loadMissing(['anak.posyandu', 'user.petugasProfile']);
+
+        return view('measurements.edit', compact('measurement'));
+    }
+
+    public function update(Request $request, Measurement $measurement)
+    {
+        $this->ensureCanModifyMeasurement($measurement);
+
+        $validated = $request->validate([
+            'height_cm' => 'required|numeric|min:30|max:150',
+            'weight_kg' => 'required|numeric|min:1|max:50',
+            'manual_height_cm' => 'nullable|numeric|min:30|max:150',
+            'manual_weight_kg' => 'nullable|numeric|min:1|max:50',
+            'photo' => 'nullable|image|max:5120',
+            'measured_at' => 'required|date|before_or_equal:today',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $measurement->loadMissing('anak');
+
+        $birthDate = $measurement->anak?->tanggal_lahir ?? $measurement->birth_date;
+        $measuredAt = Carbon::parse($validated['measured_at']);
+
+        if ($birthDate && $measuredAt->lt(Carbon::parse($birthDate)->startOfDay())) {
+            throw ValidationException::withMessages([
+                'measured_at' => 'Tanggal pengukuran tidak boleh mendahului tanggal lahir anak.',
+            ]);
+        }
+
+        // Hanya tanggalnya yang bisa diubah petugas, jadi jam pencatatan aslinya
+        // dipertahankan agar urutan pengukuran di hari yang sama tetap masuk akal.
+        if ($measurement->measured_at) {
+            $measuredAt->setTimeFrom($measurement->measured_at);
+        }
+
+        $gender = $measurement->anak?->jenis_kelamin ?? $measurement->gender;
+        $ageMonths = $birthDate ? Carbon::parse($birthDate)->diffInMonths($measuredAt) : 0;
+        $zScore = Measurement::calculateZScore($validated['height_cm'], (int) $ageMonths, $gender);
+
+        $attributes = [
+            'height_cm' => $validated['height_cm'],
+            'weight_kg' => $validated['weight_kg'],
+            'manual_height_cm' => $validated['manual_height_cm'] ?? null,
+            'manual_weight_kg' => $validated['manual_weight_kg'] ?? null,
+            'z_score' => $zScore,
+            'stunting_category' => Measurement::getStuntingCategory($zScore),
+            'measured_at' => $measuredAt,
+            'notes' => $validated['notes'] ?? null,
+        ];
+
+        [$photoPath, $posePhotoPath] = $this->storeUploadedPhotos($request);
+
+        if ($photoPath) {
+            // Foto baru mengganti foto lama sekaligus pose lamanya: pose hasil ML
+            // yang lama tidak lagi menggambarkan foto yang tersimpan.
+            $this->deleteStoredPhotos($measurement);
+            $attributes['photo_path'] = $photoPath;
+            $attributes['pose_photo_path'] = $posePhotoPath;
+        }
+
+        $measurement->update($attributes);
+
+        return redirect()->to(
+            $measurement->anak_id
+                ? route('measurements.anak.show', $measurement->anak_id)
+                : route('measurements.show', $measurement)
+        )->with('success', 'Pengukuran berhasil diperbarui!');
     }
 
     public function showAnak(Anak $anak, Request $request)
@@ -342,17 +394,9 @@ class MeasurementController extends Controller
 
     public function destroy(Measurement $measurement)
     {
-        if ($measurement->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->ensureCanModifyMeasurement($measurement);
 
-        if ($measurement->photo_path) {
-            Storage::disk('r2')->delete($measurement->photo_path);
-        }
-        
-        if ($measurement->pose_photo_path) {
-            Storage::disk('r2')->delete($measurement->pose_photo_path);
-        }
+        $this->deleteStoredPhotos($measurement);
 
         $measurement->delete();
 
@@ -559,6 +603,45 @@ class MeasurementController extends Controller
         return $query;
     }
 
+    /**
+     * Simpan foto pengukuran (file upload atau hasil jepretan kamera dalam base64)
+     * ke R2. Mengembalikan [photo_path, pose_photo_path]; null berarti tidak ada
+     * foto baru yang dikirim.
+     */
+    private function storeUploadedPhotos(Request $request): array
+    {
+        $photoPath = null;
+
+        if ($request->hasFile('photo')) {
+            $photoPath = $request->file('photo')->store('measurements', 'r2');
+        } elseif ($request->filled('photo_base64')) {
+            $photoPath = $this->storeBase64Image($request->input('photo_base64'), 'measurements/'.uniqid().'.jpg');
+        }
+
+        $posePhotoPath = $request->filled('pose_photo_base64')
+            ? $this->storeBase64Image($request->input('pose_photo_base64'), 'measurements/pose_'.uniqid().'.jpg')
+            : null;
+
+        return [$photoPath, $posePhotoPath];
+    }
+
+    private function storeBase64Image(string $dataUrl, string $filename): string
+    {
+        $binary = base64_decode(preg_replace('/^data:image\/\w+;base64,/', '', $dataUrl));
+        Storage::disk('r2')->put($filename, $binary);
+
+        return $filename;
+    }
+
+    private function deleteStoredPhotos(Measurement $measurement): void
+    {
+        foreach ([$measurement->photo_path, $measurement->pose_photo_path] as $path) {
+            if ($path) {
+                Storage::disk('r2')->delete($path);
+            }
+        }
+    }
+
     private function ensureCanAccessAnak(Anak $anak): void
     {
         $user = Auth::user();
@@ -587,5 +670,16 @@ class MeasurementController extends Controller
         }
 
         $this->ensureCanAccessAnak($measurement->anak);
+    }
+
+    /**
+     * Mengubah atau menghapus pengukuran hanya boleh dilakukan petugas yang
+     * mencatatnya; petugas lain di posyandu yang sama tetap bisa melihat.
+     */
+    private function ensureCanModifyMeasurement(Measurement $measurement): void
+    {
+        if ((int) $measurement->user_id !== (int) Auth::id()) {
+            abort(403);
+        }
     }
 }
